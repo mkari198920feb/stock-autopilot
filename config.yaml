@@ -242,6 +242,12 @@ notifications:
     enabled: true
     subject_prefix: "Stock Autopilot Daily"
     dashboard_url: ""  # optional: http://your-ip:8080 or ngrok URL
+    include_global_desk: true
+    include_india_desk: true
+    include_crypto_pulse: true
+    include_model_portfolios: true
+    max_regional_boards: 12
+    picks_per_board_email: 3
     recipients:
       - 63331961+mkari198920feb@users.noreply.github.com
       - friend1@example.com

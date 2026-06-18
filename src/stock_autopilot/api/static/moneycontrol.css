@@ -1144,6 +1144,100 @@ body.app-shell .muted { color: var(--muted); }
 .freshness-item.fresh-live { border-color: var(--up); color: var(--up); }
 .freshness-item.fresh-fresh { border-color: var(--accent); color: var(--chip-text); }
 .freshness-item.fresh-stale { border-color: #f59e0b; color: #f59e0b; }
+.freshness-item.freshness-email { border-color: #6366f1; color: #818cf8; background: rgba(99, 102, 241, 0.08); }
+
+.executive-pulse {
+  align-items: flex-start;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(49, 46, 129, 0.55));
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: var(--radius-md, 14px);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 20px 22px;
+}
+
+.executive-pulse-body { flex: 1; min-width: 260px; }
+
+.executive-label {
+  color: rgba(255, 255, 255, 0.65);
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.executive-text {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 15px;
+  line-height: 1.55;
+  margin: 0 0 12px;
+}
+
+.executive-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.executive-tag {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+}
+
+.executive-tag.regime-risk-on { border-color: rgba(16, 185, 129, 0.5); color: #6ee7b7; }
+.executive-tag.regime-risk-off { border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; }
+
+.executive-pulse-actions {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.btn-ghost:hover { background: rgba(255, 255, 255, 0.12) !important; }
+
+.email-desk-list {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 12px 0;
+  padding-left: 18px;
+}
+
+.settings-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+@media print {
+  .mesh-bg, .mc-header, .mc-indices, .global-macro-ticker, .mc-tabs, .sidebar,
+  .topbar-actions, .disclaimer-bar, .rerank-banner, .executive-pulse-actions,
+  .btn-run, .theme-toggle, .onboarding-overlay, .rerank-overlay, #run-now,
+  .freshness-strip, .track-record-detail, .settings-section, .app-footer {
+    display: none !important;
+  }
+
+  body.app-shell { background: #fff !important; color: #000 !important; }
+  .main-wrap { max-width: 100% !important; padding: 0 !important; }
+  .morning-brief-wrap, .market-picks-grid, .india-desk-wrap { break-inside: avoid; }
+  .executive-pulse {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .executive-text, .executive-label, .executive-tag { color: #0f172a !important; }
+}
 
 .curated-notice {
   background: var(--disclaimer-bg);

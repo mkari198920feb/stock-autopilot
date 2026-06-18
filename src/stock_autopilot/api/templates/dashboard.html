@@ -271,7 +271,37 @@
           <span class="freshness-item fresh-{{ fresh_crypto.badge_class }}">
             ⚡ Crypto · {{ fresh_crypto.label }}
           </span>
+          <span class="freshness-item freshness-email">
+            ✉ Daily email · {{ email_desk_summary }}
+          </span>
         </div>
+
+        {% if executive_pulse or latest %}
+        <div class="executive-pulse" id="executive-pulse">
+          <div class="executive-pulse-body">
+            <span class="executive-label">Executive desk pulse{% if today_picks_date %} · {{ today_picks_date }}{% endif %}</span>
+            <p class="executive-text">
+              {% if executive_pulse %}
+                {{ executive_pulse[:320] }}{% if executive_pulse|length > 320 %}…{% endif %}
+              {% elif latest %}
+                {{ latest.macro.summary[:320] }}{% if latest.macro.summary|length > 320 %}…{% endif %}
+              {% endif %}
+            </p>
+            <div class="executive-tags">
+              <span class="executive-tag">{{ target_label }}</span>
+              {% if latest %}<span class="executive-tag regime-{{ regime_class }}">{{ latest.macro.regime }}</span>{% endif %}
+              {% if global_desk and global_desk.global_top_picks %}<span class="executive-tag">{{ global_desk.global_top_picks|length }} global picks</span>{% endif %}
+              {% if india_desk and india_desk.equities %}<span class="executive-tag">{{ india_desk.equities|length }} India NSE</span>{% endif %}
+            </div>
+          </div>
+          <div class="executive-pulse-actions">
+            <button type="button" class="btn-run sm" id="print-brief">Print brief</button>
+            <button type="button" class="btn-run sm btn-ghost" id="copy-share-link">Copy link</button>
+            <a href="/email-preview" target="_blank" rel="noopener" class="btn-run sm btn-ghost">Preview email</a>
+          </div>
+        </div>
+        {% endif %}
+
         <div class="hero-content">
           <p class="hero-eyebrow">{{ powered_by }} · Research Autopilot</p>
           <h1 class="hero-title">Smarter Analysis. <em>Stronger Decisions.</em></h1>
@@ -1331,6 +1361,22 @@
               <button type="submit" class="btn-run sm">Save target</button>
             </form>
             <p id="target-save-msg" class="muted" style="margin-top:10px;margin-bottom:0"></p>
+          </article>
+          <article class="settings-card">
+            <h3>Daily email digest</h3>
+            <p>Friends receive a full desk brief: global regional boards, India NSE picks, crypto pulse, core equity notes, and model portfolios.</p>
+            <ul class="email-desk-list">
+              <li>🌍 Global Intelligence Desk — top picks + regional boards</li>
+              <li>🇮🇳 India Desk — NSE equities + MF / bonds / FD advisory</li>
+              <li>⚡ Crypto Pulse — BTC/ETH hourly + tiered universe</li>
+              <li>📊 Core equity research notes + model books</li>
+            </ul>
+            <div class="settings-actions">
+              <a href="/email-preview" target="_blank" rel="noopener" class="btn-run sm">Preview email</a>
+            </div>
+            <p class="muted" style="margin-top:12px;margin-bottom:0">
+              Subject: <strong>Stock Autopilot Daily</strong> · Sent after each autopilot run
+            </p>
           </article>
           <article class="settings-card">
             <h3>About {{ brand_name }}</h3>

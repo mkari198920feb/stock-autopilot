@@ -328,6 +328,26 @@
 
   document.getElementById("rerank-now-btn")?.addEventListener("click", () => rerankPicks(false));
 
+  document.getElementById("print-brief")?.addEventListener("click", () => {
+    document.getElementById("morning-brief")?.scrollIntoView({ behavior: "instant", block: "start" });
+    window.print();
+  });
+
+  document.getElementById("copy-share-link")?.addEventListener("click", async () => {
+    const url = `${window.location.origin}${window.location.pathname}#morning-brief`;
+    try {
+      await navigator.clipboard.writeText(url);
+      const btn = document.getElementById("copy-share-link");
+      if (btn) {
+        const prev = btn.textContent;
+        btn.textContent = "Copied!";
+        setTimeout(() => { btn.textContent = prev; }, 1800);
+      }
+    } catch {
+      prompt("Copy this link:", url);
+    }
+  });
+
   function openTargetDialog() {
     const dlg = document.getElementById("target-dialog");
     const minIn = document.getElementById("target-dialog-min");

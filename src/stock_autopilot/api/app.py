@@ -103,6 +103,12 @@ def _dashboard_context(latest: dict | None, runs: list[dict]) -> dict:
     )
     ctx["next_scan_label"] = f"{settings.autopilot_hour:02d}:{settings.autopilot_minute:02d} UTC daily"
     ctx["dashboard_brief_url"] = "#morning-brief"
+    ctx["executive_pulse"] = ""
+    if gd and gd.get("opening_statement"):
+        ctx["executive_pulse"] = gd["opening_statement"]
+    elif latest and latest.get("macro", {}).get("summary"):
+        ctx["executive_pulse"] = latest["macro"]["summary"]
+    ctx["email_desk_summary"] = "Global · India · Crypto · Equity notes · Model books"
     ctx["today_picks_date"] = ""
     if gd and gd.get("captured_at"):
         ctx["today_picks_date"] = gd["captured_at"][:10]
@@ -148,6 +154,24 @@ async def dashboard(request: Request):
     ctx = _dashboard_context(latest, runs)
     ctx["request"] = request
     return templates.TemplateResponse(request, "dashboard.html", ctx)
+
+
+@app.get("/email-preview", response_class=HTMLResponse)
+async def email_preview():
+    from stock_autopilot.notifications.email import build_digest_html, load_digest_bundle
+
+    try:
+        bundle = load_digest_bundle()
+    except ValueError:
+        return HTMLResponse(
+            "<html><body style='font-family:sans-serif;padding:40px'>"
+            "<h2>No digest data yet</h2><p>Run a scan first, then preview the email friends receive.</p>"
+            "</body></html>",
+            status_code=404,
+        )
+    cfg = load_config()
+    url = settings.dashboard_url or cfg.get("notifications", {}).get("email", {}).get("dashboard_url", "")
+    return HTMLResponse(build_digest_html(bundle, url, cfg))
 
 
 @app.get("/api/latest")

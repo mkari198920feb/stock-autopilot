@@ -116,18 +116,50 @@ class AutopilotAgent:
         except Exception as e:
             self._log(f"Outcome tracking skipped: {e}")
 
+        global_snap = None
+        india_snap = None
+        crypto_snap = None
+
+        self._log("Running Global Intelligence Desk for digest")
+        try:
+            from stock_autopilot.agent.global_desk import run_global_desk
+
+            global_snap = run_global_desk()
+            self._log(
+                f"Global desk: {len(global_snap.global_top_picks)} top picks · "
+                f"{len(global_snap.regional_boards)} regional boards"
+            )
+        except Exception as e:
+            self._log(f"Global desk skipped: {e}")
+
+        self._log("Running India Intelligence Desk for digest")
         try:
             from stock_autopilot.agent.india_desk import run_india_desk
 
-            india = run_india_desk()
-            self._log(f"India desk: {len(india.equities)} NSE picks + MF/Bonds/FD advisory")
+            india_snap = run_india_desk()
+            self._log(f"India desk: {len(india_snap.equities)} NSE picks + MF/Bonds/FD advisory")
         except Exception as e:
             self._log(f"India desk skipped: {e}")
 
+        self._log("Running Crypto Pulse for digest")
+        try:
+            from stock_autopilot.agent.crypto_pulse import run_crypto_pulse
+
+            crypto_snap = run_crypto_pulse()
+            self._log(f"Crypto pulse: {crypto_snap.btc.bias_label} BTC · {crypto_snap.eth.bias_label} ETH")
+        except Exception as e:
+            self._log(f"Crypto pulse skipped: {e}")
+
         if is_email_enabled(self.cfg):
             try:
-                count = send_daily_digest(result, self.cfg)
-                self._log(f"Email digest sent to {count} recipient(s)")
+                count = send_daily_digest(
+                    result,
+                    self.cfg,
+                    global_desk=global_snap,
+                    india_desk=india_snap,
+                    crypto_pulse=crypto_snap,
+                )
+                self._log(f"Full desk digest sent to {count} recipient(s)")
             except Exception as e:
                 self._log(f"Email failed: {e}")
         else:

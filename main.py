@@ -165,9 +165,9 @@ def cmd_check_email(_: argparse.Namespace) -> None:
         sys.exit(1)
 
 
-def cmd_test_email(_: argparse.Namespace) -> None:
-    from stock_autopilot.db import get_latest_run, init_db
-    from stock_autopilot.notifications.email import get_recipients, is_email_enabled, send_daily_digest
+def cmd_test_email(args: argparse.Namespace) -> None:
+    from stock_autopilot.db import init_db
+    from stock_autopilot.notifications.email import get_recipients, is_email_enabled, load_digest_bundle, send_daily_digest
     from stock_autopilot.universe import load_config
 
     init_db()
@@ -177,35 +177,36 @@ def cmd_test_email(_: argparse.Namespace) -> None:
         print(f"Recipients: {get_recipients(cfg)}")
         sys.exit(1)
 
-    latest = get_latest_run()
-    if not latest:
-        print("No run data yet — run `python main.py run` first.")
-        sys.exit(1)
+    refresh = getattr(args, "refresh", False)
+    if refresh:
+        from stock_autopilot.agent.crypto_pulse import run_crypto_pulse
+        from stock_autopilot.agent.global_desk import run_global_desk
+        from stock_autopilot.agent.india_desk import run_india_desk
+        from stock_autopilot.agent.orchestrator import run_autopilot
 
-    from stock_autopilot.models.schemas import AgentRunResult, MacroSnapshot, ModelPortfolio, ResearchNote, StockPick
-    from datetime import datetime
+        print("Refreshing all desks before send…")
+        result = run_autopilot()
+        global_snap = run_global_desk()
+        india_snap = run_india_desk()
+        crypto_snap = run_crypto_pulse()
+        count = send_daily_digest(
+            result, cfg, global_desk=global_snap, india_desk=india_snap, crypto_pulse=crypto_snap
+        )
+    else:
+        try:
+            bundle = load_digest_bundle()
+        except ValueError as e:
+            print(str(e), "— run `python main.py run` first, or use `test-email --refresh`.")
+            sys.exit(1)
+        count = send_daily_digest(
+            bundle.result,
+            cfg,
+            global_desk=bundle.global_desk,
+            india_desk=bundle.india_desk,
+            crypto_pulse=bundle.crypto_pulse,
+        )
 
-    result = AgentRunResult(
-        run_id=latest["run_id"],
-        started_at=datetime.fromisoformat(latest["started_at"]),
-        finished_at=datetime.fromisoformat(latest["finished_at"]),
-        macro=MacroSnapshot(**latest["macro"]),
-        picks=[
-            StockPick(
-                **{
-                    **p,
-                    "research_note": ResearchNote(**p["research_note"]) if p.get("research_note") else None,
-                }
-            )
-            for p in latest["picks"]
-        ],
-        model_portfolios=[ModelPortfolio(**m) for m in latest.get("model_portfolios", [])],
-        scanned=latest["scanned"],
-        status=latest["status"],
-        log=latest.get("log", []),
-    )
-    count = send_daily_digest(result, cfg)
-    print(f"Sent test digest to {count} recipient(s): {', '.join(get_recipients(cfg))}")
+    print(f"Sent full desk digest to {count} recipient(s): {', '.join(get_recipients(cfg))}")
 
 
 def cmd_india_desk(_: argparse.Namespace) -> None:
@@ -294,7 +295,9 @@ def main() -> None:
 
     sub.add_parser("check-email", help="Validate SMTP settings and test Gmail login").set_defaults(func=cmd_check_email)
 
-    sub.add_parser("test-email", help="Send digest email using latest run data").set_defaults(func=cmd_test_email)
+    p_test = sub.add_parser("test-email", help="Send full desk digest using latest DB snapshots")
+    p_test.add_argument("--refresh", action="store_true", help="Run all desks fresh before sending")
+    p_test.set_defaults(func=cmd_test_email)
 
     sub.add_parser("crypto-pulse", help="Run BTC/ETH hourly crypto prediction now").set_defaults(func=cmd_crypto_pulse)
 
