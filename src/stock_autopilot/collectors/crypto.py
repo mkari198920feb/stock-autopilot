@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import json
-import urllib.request
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
@@ -10,6 +8,7 @@ import pandas as pd
 import yfinance as yf
 
 from stock_autopilot.collectors.coingecko import fetch_simple_prices, symbol_to_id
+from stock_autopilot.collectors.http_json import fetch_json
 
 
 @dataclass
@@ -71,12 +70,11 @@ def _pct(from_price: float, to_price: float) -> float:
 
 def _fetch_fear_greed() -> tuple[int | None, str]:
     try:
-        req = urllib.request.Request(
+        data = fetch_json(
             "https://api.alternative.me/fng/?limit=1",
             headers={"User-Agent": "StockAutopilot/1.0"},
+            timeout=8,
         )
-        with urllib.request.urlopen(req, timeout=8) as resp:
-            data = json.loads(resp.read().decode())
         item = data["data"][0]
         return int(item["value"]), str(item["value_classification"])
     except Exception:

@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 def freshness_meta(iso: str | None, kind: str = "global") -> dict:
     """Human-readable freshness label + stale flag for desk modules."""
-    stale_after_min = {"global": 48 * 60, "india": 36 * 60, "crypto": 90, "pulse": 45, "advisory": 7 * 24 * 60}.get(
+    stale_after_min = {"global": 48 * 60, "india": 36 * 60, "crypto": 90, "commodities": 120, "pulse": 45, "advisory": 7 * 24 * 60}.get(
         kind, 24 * 60
     )
     if not iso:

@@ -1,4 +1,4 @@
-/* Uptick Alpha — premium fintech desk (Robinhood × Bloomberg × banner-inspired) */
+/* LUMIQ — premium fintech desk */
 
 html[data-theme="light"] {
   --bg: #f4f7fb;
@@ -566,6 +566,162 @@ body.app-shell .rerank-overlay-hint {
 .circuit-up { color: var(--up); }
 .circuit-down { color: var(--down); }
 .pulse-setup { font-size: 13px; color: var(--muted); margin: 0; padding-top: 10px; border-top: 1px solid var(--border); }
+
+/* Crypto Market Pulse (within Live Pulse board) */
+.crypto-pulse-board {
+  border-color: rgba(245, 158, 11, 0.22);
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.04), rgba(15, 23, 42, 0.2));
+}
+.crypto-pulse-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.crypto-stat-chip {
+  flex: 1 1 140px;
+  min-width: 130px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.18);
+}
+.crypto-stat-chip.crypto-fg-chip {
+  background: rgba(139, 92, 246, 0.06);
+  border-color: rgba(139, 92, 246, 0.22);
+}
+.crypto-stat-chip .cs-label {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.crypto-stat-chip .cs-val {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.crypto-stat-chip .cs-sub {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.crypto-mover-table td:first-child { width: 28px; color: var(--muted); font-size: 11px; }
+.crypto-mover-table td:last-child { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.crypto-category-list li.heat-flat strong { color: var(--muted); }
+button.deep-trigger { font: inherit; }
+button.deep-trigger:not(.link-btn) {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* Commodities Desk */
+.commodities-desk-section { margin-bottom: 28px; }
+.module-hero.module-amber {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.14), rgba(15, 23, 42, 0.35));
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+.commodities-regime-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  align-items: center;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+.commodities-regime-bar.regime-risk-on { border-color: rgba(16, 185, 129, 0.35); }
+.commodities-regime-bar.regime-risk-off { border-color: rgba(239, 68, 68, 0.35); }
+.crb-label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.crb-main strong { font-size: 16px; }
+.crb-pulse { flex: 1 1 240px; font-size: 13px; color: var(--muted); line-height: 1.45; }
+.commodities-macro-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.cms-item {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.16);
+}
+.cms-item span { display: block; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.cms-item strong { font-size: 14px; }
+.cms-item.cms-wide { grid-column: span 2; }
+.commodities-picks-panel, .commodities-mover-panel, .commodities-category-board {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+.commodities-panel-head, .commodities-cat-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.commodities-panel-head h3, .commodities-cat-head h3 { margin: 0; font-size: 15px; }
+.commodities-movers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.commodities-mover-panel h4 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.commodities-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+.commodity-card {
+  border-radius: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+}
+.commodity-card.commodity-bullish { border-color: rgba(16, 185, 129, 0.35); }
+.commodity-card.commodity-bearish { border-color: rgba(239, 68, 68, 0.35); }
+.commodity-card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+.commodity-name { font-weight: 700; font-size: 14px; }
+.commodity-price { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.commodity-price small, .commodities-picks-table small { font-size: 11px; color: var(--muted); font-weight: 400; }
+.commodity-changes { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }
+.commodity-meta { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+.commodity-note { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.4; }
+.bias-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.bias-chip.bias-bullish { background: rgba(16, 185, 129, 0.15); color: var(--up); }
+.bias-chip.bias-bearish { background: rgba(239, 68, 68, 0.15); color: var(--down); }
+.bias-chip.bias-neutral { background: rgba(148, 163, 184, 0.15); color: var(--muted); }
+.commodities-picks-table .thesis-cell { max-width: 280px; font-size: 12px; color: var(--muted); }
+.commodities-setup { font-size: 13px; color: var(--muted); margin: 0 0 8px; padding-top: 12px; border-top: 1px solid var(--border); }
+.commodities-disclaimer { font-size: 11px; color: var(--muted); margin: 0; opacity: 0.85; }
 
 .deep-intelligence-dialog {
   border: none; border-radius: 16px; padding: 0; max-width: min(920px, 96vw); width: 920px;

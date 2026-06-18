@@ -64,7 +64,8 @@ def build_global_signal_stack(cfg: dict) -> dict:
         },
         "commodities": {
             "gold": _last(macro_syms.get("gold", "GC=F")),
-            "brent": _last(macro_syms.get("oil", "CL=F")),
+            "brent": _last("BZ=F"),
+            "wti": _last(macro_syms.get("oil", "CL=F")),
             "copper": _last("HG=F"),
         },
         "summary": macro.summary,

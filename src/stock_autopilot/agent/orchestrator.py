@@ -120,6 +120,18 @@ class AutopilotAgent:
         india_snap = None
         crypto_snap = None
 
+        self._log("Running Commodities Desk for digest")
+        try:
+            from stock_autopilot.agent.commodities_desk import run_commodities_desk
+
+            cmdty_snap = run_commodities_desk()
+            self._log(
+                f"Commodities desk: {cmdty_snap.regime} · "
+                f"{len(cmdty_snap.desk_picks)} picks · {len(cmdty_snap.categories)} categories"
+            )
+        except Exception as e:
+            self._log(f"Commodities desk skipped: {e}")
+
         self._log("Running Global Intelligence Desk for digest")
         try:
             from stock_autopilot.agent.global_desk import run_global_desk

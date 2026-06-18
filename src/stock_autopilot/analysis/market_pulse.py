@@ -219,12 +219,12 @@ def _rows_from_crypto_pulse() -> list[dict]:
         return []
     rows = []
     for coin in (pulse.btc, pulse.eth):
-        chg = coin.target_upside_pct  # not 24h — use bias-based proxy
         chg_24h = coin.target_upside_pct * 0.1 if coin.bias_class == "bullish" else -coin.target_downside_pct * 0.1
+        asset = getattr(coin, "asset", None) or ("BTC" if coin is pulse.btc else "ETH")
         rows.append(
             {
-                "token": coin.asset,
-                "name": coin.asset,
+                "token": asset,
+                "name": asset,
                 "price": coin.current_price,
                 "chg_24h": round(chg_24h, 2),
                 "chg_7d": None,
@@ -233,6 +233,42 @@ def _rows_from_crypto_pulse() -> list[dict]:
             }
         )
     return rows
+
+
+def _yahoo_global_stats(rows: list[dict]) -> tuple[float, float, float, float]:
+    """Estimate global mcap / dominance when CoinGecko /global is unavailable."""
+    import yfinance as yf
+
+    mcap = 0.0
+    btc_dom = 0.0
+    eth_dom = 0.0
+    mcap_chg = 0.0
+    try:
+        btc_info = yf.Ticker("BTC-USD").info or {}
+        btc_mcap = float(btc_info.get("marketCap") or 0)
+        eth_info = yf.Ticker("ETH-USD").info or {}
+        eth_mcap = float(eth_info.get("marketCap") or 0)
+        if btc_mcap:
+            total = btc_mcap / 0.56
+            btc_dom = btc_mcap / total * 100
+            eth_dom = (eth_mcap / total * 100) if eth_mcap else 12.0
+            mcap = total
+    except Exception:
+        pass
+
+    if not mcap and rows:
+        btc_row = next((r for r in rows if r.get("token") == "BTC"), None)
+        if btc_row and btc_row.get("price"):
+            mcap = float(btc_row["price"]) * 19_800_000 / 0.56
+            btc_dom = 56.0
+            eth_dom = 12.0
+
+    if rows:
+        chgs = [r.get("chg_24h") for r in rows if r.get("chg_24h") is not None]
+        if chgs:
+            mcap_chg = sum(chgs) / len(chgs)
+
+    return mcap, mcap_chg, btc_dom, eth_dom
 
 
 def _build_crypto_board(captured: datetime) -> CryptoMarketPulseBoard:
@@ -254,6 +290,13 @@ def _build_crypto_board(captured: datetime) -> CryptoMarketPulseBoard:
 
     if not rows:
         rows = _rows_from_crypto_pulse()
+
+    if not mcap:
+        est_mcap, est_chg, est_btc, est_eth = _yahoo_global_stats(rows)
+        mcap = mcap or est_mcap
+        mcap_chg = mcap_chg or est_chg
+        btc_dom = btc_dom or est_btc
+        eth_dom = eth_dom or est_eth
 
     if not mcap and rows:
         btc_row = next((r for r in rows if r.get("token") == "BTC"), rows[0] if rows else None)

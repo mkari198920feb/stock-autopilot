@@ -179,6 +179,7 @@ def cmd_test_email(args: argparse.Namespace) -> None:
 
     refresh = getattr(args, "refresh", False)
     if refresh:
+        from stock_autopilot.agent.commodities_desk import run_commodities_desk
         from stock_autopilot.agent.crypto_pulse import run_crypto_pulse
         from stock_autopilot.agent.global_desk import run_global_desk
         from stock_autopilot.agent.india_desk import run_india_desk
@@ -186,6 +187,7 @@ def cmd_test_email(args: argparse.Namespace) -> None:
 
         print("Refreshing all desks before send…")
         result = run_autopilot()
+        run_commodities_desk()
         global_snap = run_global_desk()
         india_snap = run_india_desk()
         crypto_snap = run_crypto_pulse()
@@ -213,7 +215,7 @@ def cmd_india_desk(_: argparse.Namespace) -> None:
     from stock_autopilot.agent.india_desk import run_india_desk
 
     snap = run_india_desk()
-    print(f"\n🇮🇳 APEX India Desk — {snap.captured_at.strftime('%Y-%m-%d %H:%M UTC')}")
+    print(f"\n🇮🇳 LUMIQ India Desk — {snap.captured_at.strftime('%Y-%m-%d %H:%M UTC')}")
     print(snap.macro.ticker_text)
     print(f"\nEquity picks ({len(snap.equities)}):")
     for eq in snap.equities:
@@ -296,11 +298,23 @@ def cmd_deep_brief(args: argparse.Namespace) -> None:
     print(brief.card_text)
 
 
+def cmd_commodities_desk(_: argparse.Namespace) -> None:
+    from stock_autopilot.agent.commodities_desk import run_commodities_desk
+
+    snap = run_commodities_desk()
+    print(f"\nCommodities Desk — {snap.captured_at.strftime('%Y-%m-%d %H:%M UTC')}")
+    print(f"Regime: {snap.regime}")
+    print(f"Pulse: {snap.commodity_pulse}")
+    print(f"Categories: {len(snap.categories)} · Picks: {len(snap.desk_picks)}")
+    for p in snap.desk_picks[:4]:
+        print(f"  #{p.rank} {p.name} ({p.bias_label}) · 1D {p.change_1d_pct:+.1f}%")
+
+
 def cmd_crypto_pulse(_: argparse.Namespace) -> None:
     from stock_autopilot.agent.crypto_pulse import run_crypto_pulse
 
     pulse = run_crypto_pulse()
-    print(f"\nAPEX Crypto Desk — {pulse.captured_at.strftime('%Y-%m-%d %H:%M UTC')}")
+    print(f"\nLUMIQ Crypto Desk — {pulse.captured_at.strftime('%Y-%m-%d %H:%M UTC')}")
     print(f"Session: {pulse.session_name}")
     for coin in (pulse.btc, pulse.eth):
         print(f"\n{coin.card_text}")
@@ -324,13 +338,15 @@ def main() -> None:
 
     sub.add_parser("crypto-pulse", help="Run BTC/ETH hourly crypto prediction now").set_defaults(func=cmd_crypto_pulse)
 
-    sub.add_parser("india-desk", help="Run APEX India equities + MF/Bonds/FD desk").set_defaults(func=cmd_india_desk)
+    sub.add_parser("commodities-desk", help="Run commodities futures & macro desk").set_defaults(func=cmd_commodities_desk)
+
+    sub.add_parser("india-desk", help="Run LUMIQ India equities + MF/Bonds/FD desk").set_defaults(func=cmd_india_desk)
 
     sub.add_parser("global-desk", help="Run global regional boards + tiered crypto scan").set_defaults(func=cmd_global_desk)
 
     sub.add_parser("market-pulse", help="Run live market pulse boards (all regions + crypto)").set_defaults(func=cmd_market_pulse)
 
-    p_deep = sub.add_parser("deep-brief", help="Print APEX deep intelligence card for a symbol")
+    p_deep = sub.add_parser("deep-brief", help="Print LUMIQ deep intelligence card for a symbol")
     p_deep.add_argument("symbol", help="Ticker e.g. AAPL or RELIANCE.NS")
     p_deep.add_argument("--context", default="", help="Trigger context: 52w_high, 52w_low, gainer")
     p_deep.set_defaults(func=cmd_deep_brief)

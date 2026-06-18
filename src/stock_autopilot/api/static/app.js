@@ -103,6 +103,22 @@
     }
   });
 
+  document.getElementById("refresh-commodities")?.addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    const label = btn.textContent;
+    btn.textContent = "…";
+    try {
+      const res = await fetch("/api/commodities-desk/refresh", { method: "POST" });
+      if (!res.ok) throw new Error("Refresh failed");
+      location.reload();
+    } catch {
+      alert("Commodities desk refresh failed.");
+      btn.disabled = false;
+      btn.textContent = label;
+    }
+  });
+
   async function refreshIndia(btn) {
     if (!btn) return;
     btn.disabled = true;

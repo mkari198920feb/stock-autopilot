@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import json
 import urllib.parse
-import urllib.request
 from typing import Any
 
 from stock_autopilot.collectors.cache import cache_get_json, cache_set_json
+from stock_autopilot.collectors.http_json import fetch_json
 
 BASE = "https://api.coingecko.com/api/v3"
-UA = {"User-Agent": "UptickAlpha/1.0 (research-autopilot)"}
+UA = {"User-Agent": "LUMIQ/1.0 (research-autopilot)"}
 
 # Yahoo ticker suffix → CoinGecko id
 TICKER_TO_ID: dict[str, str] = {
@@ -47,9 +47,7 @@ def symbol_to_id(symbol: str) -> str | None:
 
 
 def _fetch_url(url: str, timeout: int = 12) -> Any:
-    req = urllib.request.Request(url, headers=UA)
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        return json.loads(resp.read().decode())
+    return fetch_json(url, headers=UA, timeout=timeout)
 
 
 def market_change_24h(row: dict) -> float | None:

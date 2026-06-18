@@ -7,6 +7,7 @@ from email.mime.text import MIMEText
 from stock_autopilot.config import settings
 from stock_autopilot.models.schemas import (
     AgentRunResult,
+    CommoditiesDeskSnapshot,
     CryptoPulseSnapshot,
     GlobalDeskSnapshot,
     IndiaDeskSnapshot,
@@ -116,12 +117,18 @@ def make_digest_bundle(
     global_desk: GlobalDeskSnapshot | None = None,
     india_desk: IndiaDeskSnapshot | None = None,
     crypto_pulse: CryptoPulseSnapshot | None = None,
+    commodities_desk: CommoditiesDeskSnapshot | None = None,
 ) -> DailyDigestBundle:
+    if commodities_desk is None:
+        from stock_autopilot.db import get_latest_commodities_desk
+
+        commodities_desk = get_latest_commodities_desk()
     return DailyDigestBundle(
         result=result,
         global_desk=global_desk,
         india_desk=india_desk,
         crypto_pulse=crypto_pulse,
+        commodities_desk=commodities_desk,
     )
 
 
@@ -154,7 +161,7 @@ def send_daily_digest(
     )
 
     email_cfg = cfg.get("notifications", {}).get("email", {})
-    prefix = email_cfg.get("subject_prefix", "Stock Autopilot Daily")
+    prefix = email_cfg.get("subject_prefix", "LUMIQ Daily")
     date_str = result.finished_at.strftime("%Y-%m-%d")
     subject = f"{prefix} · {date_str} · {result.macro.regime}"
     dashboard_url = settings.dashboard_url or email_cfg.get("dashboard_url", "")

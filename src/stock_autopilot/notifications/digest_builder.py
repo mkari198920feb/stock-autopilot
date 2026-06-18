@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from stock_autopilot.investor_profile import get_return_target_pct
 from stock_autopilot.models.schemas import (
     AgentRunResult,
+    CommoditiesDeskSnapshot,
     CryptoHourlyPrediction,
     CryptoPulseSnapshot,
     GlobalDeskSnapshot,
@@ -21,11 +22,13 @@ class DailyDigestBundle:
     global_desk: GlobalDeskSnapshot | None = None
     india_desk: IndiaDeskSnapshot | None = None
     crypto_pulse: CryptoPulseSnapshot | None = None
+    commodities_desk: CommoditiesDeskSnapshot | None = None
 
 
 def load_digest_bundle(result: AgentRunResult | None = None) -> DailyDigestBundle:
     """Build digest from an explicit run or latest DB snapshots."""
     from stock_autopilot.db import (
+        get_latest_commodities_desk,
         get_latest_crypto_pulse,
         get_latest_global_desk,
         get_latest_india_desk,
@@ -64,6 +67,7 @@ def load_digest_bundle(result: AgentRunResult | None = None) -> DailyDigestBundl
         global_desk=get_latest_global_desk(),
         india_desk=get_latest_india_desk(),
         crypto_pulse=get_latest_crypto_pulse(),
+        commodities_desk=get_latest_commodities_desk(),
     )
 
 
@@ -354,6 +358,44 @@ def _build_crypto_html(pulse: CryptoPulseSnapshot, crypto_board: list | None = N
     """
 
 
+def _build_commodities_html(desk: CommoditiesDeskSnapshot) -> str:
+    pick_rows = ""
+    for p in desk.desk_picks:
+        pick_rows += _pick_table_row([
+            f"#{p.rank}",
+            html.escape(p.name),
+            html.escape(p.category),
+            html.escape(p.bias_label),
+            f"{p.change_1d_pct:+.1f}%",
+            f"{p.change_1m_pct:+.1f}%",
+            html.escape(p.thesis[:90]),
+        ])
+    cat_bits = " · ".join(
+        f"{html.escape(c.label)} {c.change_1d_pct:+.1f}%"
+        for c in desk.categories[:5]
+    )
+    macro = desk.macro_read or {}
+    return f"""
+      <h2 id="commodities-desk" style="font-size:18px;margin:32px 0 8px;color:#0f172a;border-top:2px solid #e2e8f0;padding-top:24px">🛢 Commodities Desk</h2>
+      <p style="margin:0 0 6px;font-size:13px;color:#64748b">Regime: <strong>{html.escape(desk.regime)}</strong> · {html.escape(desk.commodity_pulse[:160])}</p>
+      <p style="margin:0 0 12px;font-size:13px;color:#475569">{html.escape(desk.tomorrow_setup[:220])}</p>
+      <p style="margin:0 0 16px;font-size:12px;color:#64748b">Categories: {cat_bits}</p>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr style="background:#f8fafc;text-align:left">
+          <th style="padding:6px 10px;font-size:11px;color:#64748b">#</th>
+          <th style="padding:6px 10px;font-size:11px;color:#64748b">Commodity</th>
+          <th style="padding:6px 10px;font-size:11px;color:#64748b">Category</th>
+          <th style="padding:6px 10px;font-size:11px;color:#64748b">Bias</th>
+          <th style="padding:6px 10px;font-size:11px;color:#64748b">1D</th>
+          <th style="padding:6px 10px;font-size:11px;color:#64748b">1M</th>
+          <th style="padding:6px 10px;font-size:11px;color:#64748b">Thesis</th>
+        </tr></thead>
+        <tbody>{pick_rows}</tbody>
+      </table>
+      <p style="margin:12px 0 0;font-size:12px;color:#64748b">India crude read: {html.escape(str(macro.get('india_crude_read', '—')))}</p>
+    """
+
+
 def _build_toc_html(bundle: DailyDigestBundle, cfg: dict) -> str:
     ecfg = _email_cfg(cfg)
     links = ['<a href="#macro" style="color:#2563eb;text-decoration:none;margin-right:12px">Macro</a>']
@@ -363,6 +405,8 @@ def _build_toc_html(bundle: DailyDigestBundle, cfg: dict) -> str:
         links.append('<a href="#india-desk" style="color:#2563eb;text-decoration:none;margin-right:12px">India Desk</a>')
     if ecfg.get("include_crypto_pulse", True) and bundle.crypto_pulse:
         links.append('<a href="#crypto-desk" style="color:#2563eb;text-decoration:none;margin-right:12px">Crypto</a>')
+    if ecfg.get("include_commodities_desk", True) and bundle.commodities_desk:
+        links.append('<a href="#commodities-desk" style="color:#2563eb;text-decoration:none;margin-right:12px">Commodities</a>')
     links.append('<a href="#equity-notes" style="color:#2563eb;text-decoration:none;margin-right:12px">Equity notes</a>')
     if ecfg.get("include_model_portfolios", True) and bundle.result.model_portfolios:
         links.append('<a href="#models" style="color:#2563eb;text-decoration:none">Model books</a>')
@@ -402,6 +446,9 @@ def build_digest_html(bundle: DailyDigestBundle, dashboard_url: str = "", cfg: d
         crypto_board = bundle.global_desk.crypto_board if bundle.global_desk else None
         sections.append(_build_crypto_html(bundle.crypto_pulse, crypto_board))
 
+    if ecfg.get("include_commodities_desk", True) and bundle.commodities_desk:
+        sections.append(_build_commodities_html(bundle.commodities_desk))
+
     apex_cards = "".join(_build_apex_pick_html(p, i) for i, p in enumerate(result.picks, 1))
     sections.append(f"""
       <h2 id="equity-notes" style="font-size:18px;margin:32px 0 12px;color:#0f172a;border-top:2px solid #e2e8f0;padding-top:24px">📊 Core equity research notes ({len(result.picks)})</h2>
@@ -424,9 +471,9 @@ def build_digest_html(bundle: DailyDigestBundle, dashboard_url: str = "", cfg: d
 <body style="margin:0;background:#f1f5f9;font-family:Segoe UI,Helvetica,Arial,sans-serif">
   <div style="max-width:720px;margin:0 auto;padding:24px">
     <div style="background:linear-gradient(135deg,#0f172a,#312e81);padding:28px;border-radius:16px 16px 0 0;color:white">
-      <div style="font-size:11px;letter-spacing:1.5px;opacity:0.75">STOCK AUTOPILOT · FULL DESK DIGEST</div>
+      <div style="font-size:11px;letter-spacing:1.5px;opacity:0.75">{html.escape(brand.upper())} · FULL DESK DIGEST</div>
       <h1 style="margin:8px 0 0;font-size:22px">{html.escape(brand)}</h1>
-      <p style="margin:6px 0 0;opacity:0.9;font-size:14px">Global · India · Crypto · Equity Research · {result.finished_at.strftime('%A, %B %d, %Y')} UTC</p>
+      <p style="margin:6px 0 0;opacity:0.9;font-size:14px">{html.escape(brand)} · Global · India · Crypto · Commodities · {result.finished_at.strftime('%A, %B %d, %Y')} UTC</p>
       <p style="margin:8px 0 0;opacity:0.8;font-size:12px">Target {html.escape(target['label'])}</p>
     </div>
     <div style="background:white;padding:24px;border:1px solid #e2e8f0;border-top:none">
@@ -436,7 +483,7 @@ def build_digest_html(bundle: DailyDigestBundle, dashboard_url: str = "", cfg: d
       {body}
     </div>
     <p style="text-align:center;color:#94a3b8;font-size:12px;margin-top:16px">
-      Stock Autopilot · Run {html.escape(result.run_id)} · {result.scanned} core symbols · Global + India + Crypto desks included
+      {html.escape(brand)} · Run {html.escape(result.run_id)} · {result.scanned} core symbols · Global + India + Crypto + Commodities desks included
     </p>
   </div>
 </body>
@@ -450,8 +497,8 @@ def build_digest_plain(bundle: DailyDigestBundle, cfg: dict | None = None) -> st
     brand = brand_cfg()["brand_name"]
     target = get_return_target_pct()
     lines = [
-        "Stock Autopilot — Full Desk Digest",
-        f"{brand} · Global · India · Crypto · Equity Research",
+        f"{brand} — Full Desk Digest",
+        f"{brand} · Global · India · Crypto · Commodities · Equity Research",
         result.finished_at.strftime("%Y-%m-%d %H:%M UTC"),
         f"Return target: {target['label']}",
         "",
@@ -483,6 +530,16 @@ def build_digest_plain(bundle: DailyDigestBundle, cfg: dict | None = None) -> st
             lines.append(
                 f"  • {asset.asset} ${asset.current_price:,.0f} {asset.bias_label} "
                 f"({asset.confidence_pct}%) — {asset.desk_note[:80]}"
+            )
+        lines.append("")
+
+    if ecfg.get("include_commodities_desk", True) and bundle.commodities_desk:
+        desk = bundle.commodities_desk
+        lines.append(f"COMMODITIES DESK — {desk.regime}")
+        lines.append(f"  Pulse: {desk.commodity_pulse}")
+        for p in desk.desk_picks:
+            lines.append(
+                f"  • #{p.rank} {p.name} {p.bias_label} 1D {p.change_1d_pct:+.1f}% — {p.thesis[:80]}"
             )
         lines.append("")
 

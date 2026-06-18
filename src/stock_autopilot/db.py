@@ -9,6 +9,7 @@ from stock_autopilot.config import settings
 from stock_autopilot.models.schemas import (
     AgentRunResult,
     CryptoPulseSnapshot,
+    CommoditiesDeskSnapshot,
     GlobalDeskSnapshot,
     IndiaDeskSnapshot,
     MacroSnapshot,
@@ -66,6 +67,12 @@ def init_db() -> None:
                 payload_json TEXT NOT NULL
             );
             CREATE INDEX IF NOT EXISTS idx_india_desk_time ON india_desk(captured_at);
+            CREATE TABLE IF NOT EXISTS commodities_desk (
+                desk_id TEXT PRIMARY KEY,
+                captured_at TEXT NOT NULL,
+                payload_json TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_commodities_desk_time ON commodities_desk(captured_at);
             CREATE TABLE IF NOT EXISTS global_desk (
                 desk_id TEXT PRIMARY KEY,
                 captured_at TEXT NOT NULL,
@@ -278,6 +285,32 @@ def get_latest_india_desk() -> IndiaDeskSnapshot | None:
 
 def get_latest_india_desk_dict() -> dict | None:
     snap = get_latest_india_desk()
+    return snap.model_dump(mode="json") if snap else None
+
+
+def save_commodities_desk(snapshot: CommoditiesDeskSnapshot) -> None:
+    with get_conn() as conn:
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO commodities_desk (desk_id, captured_at, payload_json)
+            VALUES (?, ?, ?)
+            """,
+            (snapshot.desk_id, snapshot.captured_at.isoformat(), snapshot.model_dump_json()),
+        )
+
+
+def get_latest_commodities_desk() -> CommoditiesDeskSnapshot | None:
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT payload_json FROM commodities_desk ORDER BY captured_at DESC LIMIT 1"
+        ).fetchone()
+        if not row:
+            return None
+        return CommoditiesDeskSnapshot(**json.loads(row["payload_json"]))
+
+
+def get_latest_commodities_desk_dict() -> dict | None:
+    snap = get_latest_commodities_desk()
     return snap.model_dump(mode="json") if snap else None
 
 

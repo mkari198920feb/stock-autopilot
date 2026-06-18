@@ -4,6 +4,7 @@ from datetime import datetime, timezone, timedelta
 
 from stock_autopilot.analysis.outcomes import track_record_summary
 from stock_autopilot.db import (
+    get_latest_commodities_desk_dict,
     get_latest_crypto_pulse_dict,
     get_latest_global_desk_dict,
     get_latest_india_desk_dict,
@@ -32,6 +33,7 @@ def get_desk_activity() -> dict:
     latest = get_latest_run()
     india = get_latest_india_desk_dict()
     crypto = get_latest_crypto_pulse_dict()
+    commodities = get_latest_commodities_desk_dict()
     global_desk = get_latest_global_desk_dict()
 
     global_picks = len(global_desk.get("global_top_picks") or []) if global_desk else 0
@@ -50,7 +52,7 @@ def get_desk_activity() -> dict:
         indicators = latest.get("macro", {}).get("indicators") or {}
         spy_1m = indicators.get("sp500_1m_pct")
 
-    markets_live = sum(1 for x in (latest, india, crypto, global_desk) if x)
+    markets_live = sum(1 for x in (latest, india, crypto, commodities, global_desk) if x)
 
     top_global = []
     if global_desk and global_desk.get("global_top_picks"):

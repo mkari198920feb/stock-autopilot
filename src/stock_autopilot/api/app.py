@@ -5,6 +5,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from stock_autopilot.agent.commodities_desk import run_commodities_desk
 from stock_autopilot.agent.crypto_pulse import run_crypto_pulse
 from stock_autopilot.agent.global_desk import run_global_desk
 from stock_autopilot.agent.india_desk import run_india_desk
@@ -17,6 +18,7 @@ from stock_autopilot.config import settings
 from stock_autopilot.investor_profile import get_return_target_pct
 from stock_autopilot.collectors.cache import init_cache
 from stock_autopilot.db import (
+    get_latest_commodities_desk_dict,
     get_latest_crypto_pulse_dict,
     get_latest_global_desk_dict,
     get_latest_india_desk_dict,
@@ -60,14 +62,16 @@ def _dashboard_context(latest: dict | None, runs: list[dict]) -> dict:
         "avg_score": 0,
         "regime_class": "neutral",
         "risk_pct": 50,
-        "firm_name": apex.get("firm_name", "Uptick Alpha Research Desk"),
+        "firm_name": apex.get("firm_name", "LUMIQ Research Desk"),
         "firm_role": apex.get("role", "Chief Investment Strategist · Equity Research"),
         "firm_tagline": apex.get("tagline", "Institutional-grade equity research"),
-        "brand_name": apex.get("brand_name", "Uptick Alpha"),
-        "brand_short": apex.get("brand_short", "↗"),
+        "brand_name": apex.get("brand_name", "LUMIQ"),
+        "brand_short": apex.get("brand_short", "◈"),
         "brand_tagline": apex.get("brand_tagline", "Global markets · Research autopilot"),
-        "powered_by": apex.get("powered_by", "Stock Autopilot"),
+        "powered_by": apex.get("powered_by", "LUMIQ"),
+        "email_subject_prefix": cfg.get("notifications", {}).get("email", {}).get("subject_prefix", "LUMIQ Daily"),
         "crypto_pulse": get_latest_crypto_pulse_dict(),
+        "commodities_desk": get_latest_commodities_desk_dict(),
         "india_desk": get_latest_india_desk_dict(),
         "global_desk": get_latest_global_desk_dict(),
         "market_pulse": get_latest_market_pulse_dict(),
@@ -101,6 +105,10 @@ def _dashboard_context(latest: dict | None, runs: list[dict]) -> dict:
     ctx["fresh_crypto"] = freshness_meta(
         crypto["captured_at"] if crypto else None, "crypto"
     )
+    cmdty = ctx["commodities_desk"]
+    ctx["fresh_commodities"] = freshness_meta(
+        cmdty["captured_at"] if cmdty else None, "commodities"
+    )
     mp = ctx["market_pulse"]
     ctx["fresh_pulse"] = freshness_meta(
         mp["captured_at"] if mp else None, "pulse"
@@ -115,7 +123,7 @@ def _dashboard_context(latest: dict | None, runs: list[dict]) -> dict:
         ctx["executive_pulse"] = gd["opening_statement"]
     elif latest and latest.get("macro", {}).get("summary"):
         ctx["executive_pulse"] = latest["macro"]["summary"]
-    ctx["email_desk_summary"] = "Global · India · Crypto · Equity notes · Model books"
+    ctx["email_desk_summary"] = "Global · India · Crypto · Commodities · Equity notes · Model books"
     ctx["today_picks_date"] = ""
     if gd and gd.get("captured_at"):
         ctx["today_picks_date"] = gd["captured_at"][:10]
@@ -141,7 +149,7 @@ def _dashboard_context(latest: dict | None, runs: list[dict]) -> dict:
 
     return ctx
 
-app = FastAPI(title="Stock Autopilot", version="0.1.0")
+app = FastAPI(title="LUMIQ", version="0.1.0")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -213,6 +221,23 @@ async def api_crypto_pulse_refresh():
     try:
         pulse = run_crypto_pulse()
         return pulse.model_dump(mode="json")
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.get("/api/commodities-desk")
+async def api_commodities_desk():
+    data = get_latest_commodities_desk_dict()
+    if not data:
+        return JSONResponse({"status": "no_data"}, status_code=404)
+    return data
+
+
+@app.post("/api/commodities-desk/refresh")
+async def api_commodities_desk_refresh():
+    try:
+        snap = run_commodities_desk()
+        return snap.model_dump(mode="json")
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
 

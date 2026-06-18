@@ -8,7 +8,7 @@ from stock_autopilot.analysis.regional_board import build_all_regional_boards, f
 from stock_autopilot.collectors.global_signals import build_global_signal_stack, build_macro_ticker
 from stock_autopilot.collectors.macro import analyze_global_conditions
 from stock_autopilot.collectors.market import batch_fetch_metrics
-from stock_autopilot.db import get_latest_crypto_pulse, get_latest_india_desk, init_db, save_global_desk
+from stock_autopilot.db import get_latest_commodities_desk, get_latest_crypto_pulse, get_latest_india_desk, init_db, save_global_desk
 from stock_autopilot.analysis.outcomes import record_global_desk_picks, resolve_due_outcomes
 from stock_autopilot.models.schemas import GlobalDeskSnapshot
 from stock_autopilot.universe import brand_cfg, crypto_tier_universe, global_market_universe, load_config, load_global_desk_config
@@ -59,6 +59,10 @@ def run_global_desk() -> GlobalDeskSnapshot:
     crypto_board = build_crypto_board(crypto_tiers)
     signal_stack = build_global_signal_stack(cfg)
     signal_stack["crypto_pulse"] = crypto_market_pulse(crypto_board)
+    cmdty = get_latest_commodities_desk()
+    if cmdty:
+        signal_stack["commodity_pulse"] = cmdty.commodity_pulse
+        signal_stack["commodities_regime"] = cmdty.regime
 
     india = get_latest_india_desk()
     india_macro = india.macro.model_dump() if india else None

@@ -31,8 +31,8 @@ def load_global_desk_config(cfg: dict | None = None) -> dict:
 def brand_cfg(cfg: dict | None = None) -> dict:
     cfg = cfg or load_config()
     apex = cfg.get("apex", {})
-    name = apex.get("brand_name", "Uptick Alpha")
-    global_name = apex.get("global_platform_name", f"{name} Global")
+    name = apex.get("brand_name", "LUMIQ")
+    global_name = apex.get("global_platform_name", name)
     return {
         "brand_name": name,
         "global_platform_name": global_name,

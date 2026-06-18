@@ -31,6 +31,15 @@ def _maybe_run_india_desk() -> None:
     run_india_desk()
 
 
+def _maybe_run_commodities_desk() -> None:
+    cfg = load_config()
+    if not cfg.get("commodities_desk", {}).get("enabled", True):
+        return
+    from stock_autopilot.agent.commodities_desk import run_commodities_desk
+
+    run_commodities_desk()
+
+
 def _resolve_outcomes() -> None:
     from stock_autopilot.analysis.outcomes import resolve_due_outcomes
     from stock_autopilot.collectors.cache import init_cache
@@ -83,6 +92,23 @@ def start_scheduler() -> BackgroundScheduler:
             id="daily_india_desk",
             replace_existing=True,
         )
+    cmdty = cfg.get("commodities_desk", {})
+    if cmdty.get("enabled", True):
+        cron = cmdty.get("refresh_cron", "15 * * * *")
+        parts = cron.split()
+        if len(parts) == 5:
+            _scheduler.add_job(
+                _maybe_run_commodities_desk,
+                CronTrigger(
+                    minute=parts[0],
+                    hour=parts[1],
+                    day=parts[2],
+                    month=parts[3],
+                    day_of_week=parts[4],
+                ),
+                id="hourly_commodities_desk",
+                replace_existing=True,
+            )
     _scheduler.add_job(
         _resolve_outcomes,
         CronTrigger(minute=20),
@@ -110,6 +136,11 @@ def start_scheduler() -> BackgroundScheduler:
 
     try:
         _maybe_run_global_desk()
+    except Exception:
+        pass
+
+    try:
+        _maybe_run_commodities_desk()
     except Exception:
         pass
 

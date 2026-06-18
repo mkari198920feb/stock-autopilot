@@ -57,15 +57,16 @@ investor_profile:
   # target_pct: 15
   # band_width_pct: 3
 
-# Brand & research persona (UI + notes; email subject stays "Stock Autopilot Daily")
+# Brand & research persona (UI, notes, email subject)
 apex:
-  brand_name: Uptick Alpha
-  brand_short: "↗"
+  brand_name: LUMIQ
+  brand_short: "◈"
   brand_tagline: Global markets · Research autopilot
-  firm_name: Uptick Alpha Research Desk
+  firm_name: LUMIQ Research Desk
+  global_platform_name: LUMIQ
   role: Chief Investment Strategist · Equity Research
   tagline: Institutional-grade equity research across every risk profile
-  powered_by: Stock Autopilot
+  powered_by: LUMIQ
 
 # APEX Deep Intelligence — stock detail engine + live market pulse boards
 apex_deep:
@@ -87,6 +88,41 @@ crypto_pulse:
     sentiment: 0.15
     microstructure: 0.10
     session_timing: 0.05
+
+# APEX Commodities Desk — futures, energy, metals, ag proxies
+commodities_desk:
+  enabled: true
+  refresh_cron: "15 * * * *"
+  desk_picks: 6
+  categories:
+    precious:
+      label: "Precious Metals"
+      symbols:
+        - {symbol: "GC=F", name: "Gold", unit: "$/oz"}
+        - {symbol: "SI=F", name: "Silver", unit: "$/oz"}
+    energy:
+      label: "Energy"
+      symbols:
+        - {symbol: "CL=F", name: "WTI Crude", unit: "$/bbl"}
+        - {symbol: "BZ=F", name: "Brent Crude", unit: "$/bbl"}
+        - {symbol: "NG=F", name: "Natural Gas", unit: "$/MMBtu"}
+    industrial:
+      label: "Industrial Metals"
+      symbols:
+        - {symbol: "HG=F", name: "Copper", unit: "$/lb"}
+        - {symbol: "PL=F", name: "Platinum", unit: "$/oz"}
+    agriculture:
+      label: "Agriculture"
+      symbols:
+        - {symbol: "ZC=F", name: "Corn", unit: "¢/bu"}
+        - {symbol: "ZW=F", name: "Wheat", unit: "¢/bu"}
+        - {symbol: "ZS=F", name: "Soybeans", unit: "¢/bu"}
+    etf_proxy:
+      label: "ETF Proxies"
+      symbols:
+        - {symbol: "GLD", name: "SPDR Gold", unit: "$"}
+        - {symbol: "USO", name: "US Oil Fund", unit: "$"}
+        - {symbol: "DBC", name: "Invesco DB Commodity", unit: "$"}
 
 # APEX India Intelligence Desk — NSE/BSE equities + MF/Bonds/FD advisory
 india_desk:
@@ -246,11 +282,12 @@ scoring:
 notifications:
   email:
     enabled: true
-    subject_prefix: "Stock Autopilot Daily"
+    subject_prefix: "LUMIQ Daily"
     dashboard_url: ""  # optional: http://your-ip:8080 or ngrok URL
     include_global_desk: true
     include_india_desk: true
     include_crypto_pulse: true
+    include_commodities_desk: true
     include_model_portfolios: true
     max_regional_boards: 12
     picks_per_board_email: 3

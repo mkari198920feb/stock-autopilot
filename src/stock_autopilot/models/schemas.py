@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 
 
 class MacroSnapshot(BaseModel):
@@ -414,6 +414,76 @@ class CryptoMarketPulseBoard(BaseModel):
     volume_leaders: list[dict] = Field(default_factory=list)
     category_performance: list[dict] = Field(default_factory=list)
     tomorrow_setup: str = ""
+
+
+class CommodityQuote(BaseModel):
+    symbol: str
+    name: str
+    category: str
+    category_label: str
+    unit: str = "$"
+    price: float
+    change_1d_pct: float = 0.0
+    change_1w_pct: float = 0.0
+    change_1m_pct: float = 0.0
+    week_52_high: float | None = None
+    week_52_low: float | None = None
+    dist_from_52w_high_pct: float | None = None
+    rsi_14: float = 50.0
+    ma_20: float | None = None
+    ma_50: float | None = None
+    trend: str = "Neutral"
+    trend_class: str = "neutral"
+    bias_label: str = "NEUTRAL"
+    bias_class: str = "neutral"
+    conviction: int = 50
+    desk_note: str = ""
+
+
+class CommodityCategoryBoard(BaseModel):
+    category_id: str
+    label: str
+    change_1d_pct: float = 0.0
+    change_1w_pct: float = 0.0
+    quotes: list[CommodityQuote] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("quotes", "items"),
+    )
+    top_mover: str = ""
+    setup_note: str = ""
+
+
+class CommodityDeskPick(BaseModel):
+    rank: int
+    symbol: str
+    name: str
+    category: str
+    price: float
+    unit: str
+    change_1d_pct: float
+    change_1m_pct: float
+    bias_label: str
+    bias_class: str
+    conviction: int
+    thesis: str
+    risk: str
+    horizon: str = "1–4W"
+
+
+class CommoditiesDeskSnapshot(BaseModel):
+    desk_id: str
+    captured_at: datetime
+    opening_statement: str
+    regime: str = "Mixed"
+    regime_class: str = "neutral"
+    commodity_pulse: str = ""
+    macro_read: dict = Field(default_factory=dict)
+    categories: list[CommodityCategoryBoard] = Field(default_factory=list)
+    top_gainers: list[CommodityQuote] = Field(default_factory=list)
+    top_losers: list[CommodityQuote] = Field(default_factory=list)
+    desk_picks: list[CommodityDeskPick] = Field(default_factory=list)
+    tomorrow_setup: str = ""
+    disclaimer: str = ""
 
 
 class MarketPulseSnapshot(BaseModel):

@@ -1,7 +1,7 @@
       <section id="market-pulse" class="market-pulse-section">
         <div class="section-banner pulse-banner">
           <div>
-            <p class="hero-eyebrow">APEX Deep Intelligence · Layer 2</p>
+            <p class="hero-eyebrow">{{ brand_name }} Deep Intelligence · Layer 2</p>
             <h2>Live Market Pulse Board</h2>
             <p class="section-sub">
               {% if market_pulse %}{{ market_pulse.opening_statement[:200] }}…{% else %}
@@ -35,34 +35,78 @@
         <article class="pulse-board crypto-pulse-board">
           <header class="pulse-board-head">
             <h3>₿ Crypto Market Pulse</h3>
-            <span class="pulse-meta">MCap ${{ "{:,.0f}".format(market_pulse.crypto.total_market_cap_usd / 1e9) }}B · BTC dom {{ market_pulse.crypto.btc_dominance_pct }}% · {{ market_pulse.crypto.fear_greed_label }}</span>
+            <span class="pulse-meta">Updated {{ market_pulse.crypto.captured_at[:16] }} UTC</span>
           </header>
+
+          <div class="crypto-pulse-stats">
+            <div class="crypto-stat-chip">
+              <span class="cs-label">Total MCap</span>
+              <span class="cs-val">${{ "{:,.0f}".format(market_pulse.crypto.total_market_cap_usd / 1e9) }}B</span>
+              <span class="cs-sub {% if market_pulse.crypto.market_cap_change_24h_pct > 0 %}pct-up{% elif market_pulse.crypto.market_cap_change_24h_pct < 0 %}pct-down{% endif %}">{{ "{:+.1f}".format(market_pulse.crypto.market_cap_change_24h_pct) }}% 24H</span>
+            </div>
+            <div class="crypto-stat-chip">
+              <span class="cs-label">BTC Dominance</span>
+              <span class="cs-val">{{ "{:.1f}".format(market_pulse.crypto.btc_dominance_pct) }}%</span>
+              <span class="cs-sub">ETH {{ "{:.1f}".format(market_pulse.crypto.eth_dominance_pct) }}%</span>
+            </div>
+            <div class="crypto-stat-chip crypto-fg-chip">
+              <span class="cs-label">Sentiment</span>
+              <span class="cs-val">{{ market_pulse.crypto.fear_greed_label }}</span>
+              <span class="cs-sub">Fear &amp; Greed index</span>
+            </div>
+          </div>
+
           <div class="pulse-grid-3">
             <div class="pulse-panel">
               <h4>Top gainers 24H</h4>
-              <ul class="pulse-mover-list">
-                {% for row in market_pulse.crypto.top_gainers_24h %}
-                <li><button type="button" class="deep-trigger" data-deep-symbol="{{ row.token }}-USD" data-deep-context="crypto">{{ row.token }} +{{ "{:.1f}".format(row.chg_24h or 0) }}%</button></li>
-                {% endfor %}
-              </ul>
+              <table class="pulse-table crypto-mover-table">
+                <thead><tr><th>#</th><th>Token</th><th>24H</th></tr></thead>
+                <tbody>
+                  {% for row in market_pulse.crypto.top_gainers_24h %}
+                  <tr>
+                    <td>{{ loop.index }}</td>
+                    <td><button type="button" class="deep-trigger link-btn" data-deep-symbol="{{ row.token }}-USD" data-deep-context="crypto">{{ row.token }}</button></td>
+                    <td class="pct-up">+{{ "{:.1f}".format(row.chg_24h or 0) }}%</td>
+                  </tr>
+                  {% else %}
+                  <tr><td colspan="3" class="muted">No data</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
             </div>
             <div class="pulse-panel">
               <h4>Top losers 24H</h4>
-              <ul class="pulse-mover-list">
-                {% for row in market_pulse.crypto.top_losers_24h %}
-                <li><button type="button" class="deep-trigger" data-deep-symbol="{{ row.token }}-USD" data-deep-context="crypto">{{ row.token }} {{ "{:.1f}".format(row.chg_24h or 0) }}%</button></li>
-                {% endfor %}
-              </ul>
+              <table class="pulse-table crypto-mover-table">
+                <thead><tr><th>#</th><th>Token</th><th>24H</th></tr></thead>
+                <tbody>
+                  {% for row in market_pulse.crypto.top_losers_24h %}
+                  <tr>
+                    <td>{{ loop.index }}</td>
+                    <td><button type="button" class="deep-trigger link-btn" data-deep-symbol="{{ row.token }}-USD" data-deep-context="crypto">{{ row.token }}</button></td>
+                    <td class="pct-down">{{ "{:.1f}".format(row.chg_24h or 0) }}%</td>
+                  </tr>
+                  {% else %}
+                  <tr><td colspan="3" class="muted">No data</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
             </div>
             <div class="pulse-panel">
               <h4>Category performance</h4>
-              <ul class="pulse-mover-list">
+              <ul class="sector-heat-list crypto-category-list">
                 {% for cat in market_pulse.crypto.category_performance %}
-                <li>{{ cat.category }} · {{ "{:+.1f}".format(cat.change_pct) }}%</li>
+                <li class="{% if cat.change_pct > 0.3 %}heat-up{% elif cat.change_pct < -0.3 %}heat-down{% else %}heat-flat{% endif %}">
+                  <span>{{ cat.category }}</span>
+                  <strong>{{ "{:+.1f}".format(cat.change_pct) }}%</strong>
+                </li>
                 {% endfor %}
               </ul>
             </div>
           </div>
+
+          {% if market_pulse.crypto.tomorrow_setup %}
+          <p class="pulse-setup"><strong>Desk note:</strong> {{ market_pulse.crypto.tomorrow_setup }}</p>
+          {% endif %}
         </article>
         {% endif %}
 

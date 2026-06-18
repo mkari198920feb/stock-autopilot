@@ -14,7 +14,7 @@ from stock_autopilot.universe import brand_cfg, load_config
 
 
 def _opening_statement() -> str:
-    name = brand_cfg().get("brand_name", "Uptick Alpha")
+    name = brand_cfg().get("brand_name", "LUMIQ")
     return (
         f"Namaste. {name} India Desk is active — NSE/BSE equities, mutual funds, "
         "bonds, and FD rates with risk tiering and Indian tax treatment on every idea."

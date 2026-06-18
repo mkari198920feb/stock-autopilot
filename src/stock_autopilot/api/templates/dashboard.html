@@ -126,6 +126,7 @@
       <a href="#picks" class="mc-tab">Global</a>
       <a href="#india" class="mc-tab">India</a>
       <a href="#crypto" class="mc-tab">Crypto</a>
+      <a href="#commodities" class="mc-tab">Commodities</a>
       <a href="#more" class="mc-tab">More</a>
     </nav>
 
@@ -665,6 +666,159 @@
           </div>
           <pre id="crypto-research-out" class="crypto-research-out">Enter a symbol to load full token note.</pre>
         </div>
+      </section>
+      {% endif %}
+
+      {% if commodities_desk %}
+      <section class="commodities-desk-section" id="commodities">
+        <div class="module-hero module-amber">
+          <div>
+            <h2>🛢 Commodities Desk</h2>
+            <p>{{ commodities_desk.opening_statement }}</p>
+          </div>
+          <div class="module-pills">
+            <span class="freshness-item fresh-{{ fresh_commodities.badge_class }}">{{ fresh_commodities.label }}</span>
+            <button id="refresh-commodities" class="btn-run sm" type="button">↻ Refresh</button>
+          </div>
+        </div>
+
+        <div class="commodities-regime-bar regime-{{ commodities_desk.regime_class }}">
+          <div class="crb-main">
+            <span class="crb-label">Macro regime</span>
+            <strong>{{ commodities_desk.regime }}</strong>
+          </div>
+          <div class="crb-pulse">{{ commodities_desk.commodity_pulse }}</div>
+        </div>
+
+        {% set mr = commodities_desk.macro_read or {} %}
+        <div class="commodities-macro-strip">
+          <div class="cms-item"><span>Gold 1M</span><strong class="{% if (mr.gold_1m_pct or 0) > 0 %}pct-up{% elif (mr.gold_1m_pct or 0) < 0 %}pct-down{% endif %}">{{ "{:+.1f}".format(mr.gold_1m_pct or 0) }}%</strong></div>
+          <div class="cms-item"><span>Oil (Brent)</span><strong>{% if mr.oil_level %}${{ "{:,.2f}".format(mr.oil_level) }}{% else %}—{% endif %}</strong></div>
+          <div class="cms-item"><span>Oil 1M</span><strong class="{% if (mr.oil_1m_pct or 0) > 0 %}pct-up{% elif (mr.oil_1m_pct or 0) < 0 %}pct-down{% endif %}">{{ "{:+.1f}".format(mr.oil_1m_pct or 0) }}%</strong></div>
+          <div class="cms-item"><span>Copper 1M</span><strong class="{% if (mr.copper_1m_pct or 0) > 0 %}pct-up{% elif (mr.copper_1m_pct or 0) < 0 %}pct-down{% endif %}">{{ "{:+.1f}".format(mr.copper_1m_pct or 0) }}%</strong></div>
+          <div class="cms-item"><span>Brent-WTI</span><strong>{% if mr.brent_wti_spread is not none %}${{ "{:.2f}".format(mr.brent_wti_spread) }}{% else %}—{% endif %}</strong></div>
+          <div class="cms-item cms-wide"><span>India read</span><strong>{{ mr.india_crude_read or '—' }}</strong></div>
+        </div>
+
+        <div class="commodities-picks-panel">
+          <div class="commodities-panel-head">
+            <h3>Desk picks · momentum &amp; conviction</h3>
+            <span class="panel-count">{{ commodities_desk.desk_picks|length }} ideas</span>
+          </div>
+          <div class="mc-table-wrap">
+            <table class="mc-table commodities-picks-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Commodity</th>
+                  <th>Category</th>
+                  <th>Price</th>
+                  <th>1D</th>
+                  <th>1M</th>
+                  <th>Bias</th>
+                  <th>Conv.</th>
+                  <th>Thesis</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in commodities_desk.desk_picks %}
+                <tr>
+                  <td>{{ p.rank }}</td>
+                  <td><strong>{{ p.name }}</strong><small>{{ p.symbol }}</small></td>
+                  <td>{{ p.category }}</td>
+                  <td>{{ "{:,.2f}".format(p.price) }} <small>{{ p.unit }}</small></td>
+                  <td class="{% if p.change_1d_pct > 0 %}pct-up{% elif p.change_1d_pct < 0 %}pct-down{% endif %}">{{ "{:+.1f}".format(p.change_1d_pct) }}%</td>
+                  <td class="{% if p.change_1m_pct > 0 %}pct-up{% elif p.change_1m_pct < 0 %}pct-down{% endif %}">{{ "{:+.1f}".format(p.change_1m_pct) }}%</td>
+                  <td><span class="bias-chip bias-{{ p.bias_class }}">{{ p.bias_label }}</span></td>
+                  <td>{{ p.conviction }}%</td>
+                  <td class="thesis-cell">{{ p.thesis[:120] }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="commodities-movers-grid">
+          <div class="commodities-mover-panel">
+            <h4>Top gainers 24H</h4>
+            <table class="pulse-table">
+              <thead><tr><th>Commodity</th><th>Price</th><th>1D</th><th>RSI</th></tr></thead>
+              <tbody>
+                {% for q in commodities_desk.top_gainers %}
+                <tr>
+                  <td><strong>{{ q.name }}</strong></td>
+                  <td>{{ "{:,.2f}".format(q.price) }}</td>
+                  <td class="pct-up">+{{ "{:.1f}".format(q.change_1d_pct) }}%</td>
+                  <td>{{ "{:.0f}".format(q.rsi_14) }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="commodities-mover-panel">
+            <h4>Top losers 24H</h4>
+            <table class="pulse-table">
+              <thead><tr><th>Commodity</th><th>Price</th><th>1D</th><th>RSI</th></tr></thead>
+              <tbody>
+                {% for q in commodities_desk.top_losers %}
+                <tr>
+                  <td><strong>{{ q.name }}</strong></td>
+                  <td>{{ "{:,.2f}".format(q.price) }}</td>
+                  <td class="pct-down">{{ "{:.1f}".format(q.change_1d_pct) }}%</td>
+                  <td>{{ "{:.0f}".format(q.rsi_14) }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {% for cat in commodities_desk.categories %}
+        <article class="commodities-category-board">
+          <header class="commodities-cat-head">
+            <h3>{{ cat.label }}</h3>
+            <span class="cat-meta">{{ "{:+.1f}".format(cat.change_1d_pct) }}% 1D · {{ cat.top_mover }}</span>
+          </header>
+          <div class="commodities-card-grid">
+            {% for q in cat.quotes %}
+            <div class="commodity-card commodity-{{ q.bias_class }}">
+              <div class="commodity-card-head">
+                <span class="commodity-name">{{ q.name }}</span>
+                <span class="bias-chip bias-{{ q.bias_class }}">{{ q.bias_label }}</span>
+              </div>
+              <div class="commodity-price">{{ "{:,.2f}".format(q.price) }} <small>{{ q.unit }}</small></div>
+              <div class="commodity-changes">
+                <span class="{% if q.change_1d_pct > 0 %}pct-up{% elif q.change_1d_pct < 0 %}pct-down{% endif %}">1D {{ "{:+.1f}".format(q.change_1d_pct) }}%</span>
+                <span class="{% if q.change_1w_pct > 0 %}pct-up{% elif q.change_1w_pct < 0 %}pct-down{% endif %}">1W {{ "{:+.1f}".format(q.change_1w_pct) }}%</span>
+                <span class="{% if q.change_1m_pct > 0 %}pct-up{% elif q.change_1m_pct < 0 %}pct-down{% endif %}">1M {{ "{:+.1f}".format(q.change_1m_pct) }}%</span>
+              </div>
+              <div class="commodity-meta">
+                <span>RSI {{ "{:.0f}".format(q.rsi_14) }}</span>
+                {% if q.dist_from_52w_high_pct is not none %}<span>vs 52W H {{ "{:.1f}".format(q.dist_from_52w_high_pct) }}%</span>{% endif %}
+              </div>
+              <p class="commodity-note">{{ q.desk_note }}</p>
+            </div>
+            {% endfor %}
+          </div>
+        </article>
+        {% endfor %}
+
+        <p class="commodities-setup"><strong>Tomorrow's setup:</strong> {{ commodities_desk.tomorrow_setup }}</p>
+        <p class="commodities-disclaimer">{{ commodities_desk.disclaimer }}</p>
+      </section>
+      {% else %}
+      <section class="commodities-desk-section" id="commodities">
+        <div class="module-hero module-amber">
+          <div>
+            <h2>🛢 Commodities Desk</h2>
+            <p>Precious metals, energy, industrial metals, agriculture, and ETF proxies.</p>
+          </div>
+          <div class="module-pills">
+            <button id="refresh-commodities" class="btn-run sm" type="button">↻ Load desk</button>
+          </div>
+        </div>
+        <div class="pulse-empty"><p>No commodities data yet. Click <strong>Load desk</strong> to scan futures and ETFs.</p></div>
       </section>
       {% endif %}
 
@@ -1378,14 +1532,14 @@
               <a href="/email-preview" target="_blank" rel="noopener" class="btn-run sm">Preview email</a>
             </div>
             <p class="muted" style="margin-top:12px;margin-bottom:0">
-              Subject: <strong>Stock Autopilot Daily</strong> · Sent after each autopilot run
+              Subject: <strong>{{ email_subject_prefix }}</strong> · Sent after each autopilot run
             </p>
           </article>
           <article class="settings-card">
             <h3>About {{ brand_name }}</h3>
             <p>
               {{ firm_tagline }}. Powered by {{ powered_by }} — publisher research only, not financial advice.
-              Daily email subject remains <strong>Stock Autopilot Daily</strong>.
+              Daily email subject: <strong>{{ email_subject_prefix }}</strong>.
             </p>
             <p class="muted" style="margin-top:12px;margin-bottom:0">
               Autopilot schedule · {{ autopilot_time }} · Target band <span class="target-band-display">{{ target_min }}–{{ target_max }}</span>% / yr
@@ -1419,7 +1573,7 @@
     <dialog id="deep-intelligence-dialog" class="deep-intelligence-dialog">
       <div class="deep-dialog-head">
         <div>
-          <p class="hero-eyebrow">APEX Deep Intelligence · Layer 1</p>
+            <p class="hero-eyebrow">{{ brand_name }} Deep Intelligence · Layer 1</p>
           <h3 id="deep-dialog-title">Full Stock Brief</h3>
         </div>
         <button type="button" class="deep-dialog-close" id="deep-dialog-close" aria-label="Close">×</button>
