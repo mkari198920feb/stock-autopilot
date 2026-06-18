@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ brand_name }} · Markets Desk</title>
+    <script>
+      (function () {
+        var t = localStorage.getItem("uptick-theme") || "dark";
+        document.documentElement.setAttribute("data-theme", t);
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="/static/moneycontrol.css" />
+  </head>
+  <body class="app-shell">
+    <div class="mesh-bg"></div>
+
+    <header class="mc-header">
+      <div class="mc-brand">
+        <span class="mc-logo" aria-hidden="true">{{ brand_short }}</span>
+        <div class="mc-brand-text">
+          <strong>{{ brand_name }}</strong>
+          <span>{{ brand_tagline }}</span>
+        </div>
+      </div>
+      <div class="mc-header-actions">
+        <div class="theme-toggle" role="group" aria-label="Color theme">
+          <button type="button" class="theme-btn" data-theme="light" title="Light theme" aria-label="Light theme">☀</button>
+          <button type="button" class="theme-btn" data-theme="dark" title="Dark theme" aria-label="Dark theme">☾</button>
+        </div>
+        <div class="target-chip target-chip-edit" id="target-chip" title="Click to set your annual return goal">
+          <span class="chip-label">Target </span>
+          <span class="chip-value target-band-display">{{ target_min }}–{{ target_max }}%</span>
+          <span class="chip-edit-hint">✎</span>
+        </div>
+        <button id="run-now" class="btn-run">
+          <span class="btn-icon">▶</span>
+          <span class="btn-text">Run Scan</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="mc-indices">
+      {% if india_desk %}
+      <div class="mc-index-item">
+        <span class="mc-index-name">Nifty 50</span>
+        <span class="mc-index-value">{{ "{:,.0f}".format(india_desk.macro.nifty) }}</span>
+        <span class="mc-index-change {% if india_desk.macro.nifty_change_pct > 0 %}up{% elif india_desk.macro.nifty_change_pct < 0 %}down{% else %}flat{% endif %}">
+          {{ "{:+.2f}".format(india_desk.macro.nifty_change_pct) }}%
+        </span>
+      </div>
+      <div class="mc-index-item">
+        <span class="mc-index-name">Sensex</span>
+        <span class="mc-index-value">{{ "{:,.0f}".format(india_desk.macro.sensex) }}</span>
+        <span class="mc-index-change {% if india_desk.macro.sensex_change_pct > 0 %}up{% elif india_desk.macro.sensex_change_pct < 0 %}down{% else %}flat{% endif %}">
+          {{ "{:+.2f}".format(india_desk.macro.sensex_change_pct) }}%
+        </span>
+      </div>
+      <div class="mc-index-item">
+        <span class="mc-index-name">India VIX</span>
+        <span class="mc-index-value">{{ india_desk.macro.india_vix or "—" }}</span>
+        <span class="mc-index-change flat">{{ india_desk.macro.vix_sentiment }}</span>
+      </div>
+      <div class="mc-index-item">
+        <span class="mc-index-name">USD/INR</span>
+        <span class="mc-index-value">₹{{ india_desk.macro.inr_usd or "—" }}</span>
+        <span class="mc-index-change flat">
+          {% if india_desk.macro.inr_change_pct %}{{ "{:+.2f}".format(india_desk.macro.inr_change_pct) }}%{% else %}—{% endif %}
+        </span>
+      </div>
+      {% endif %}
+      {% if crypto_pulse %}
+      <div class="mc-index-item">
+        <span class="mc-index-name">Bitcoin</span>
+        <span class="mc-index-value">${{ "{:,.0f}".format(crypto_pulse.btc.current_price) }}</span>
+        <span class="mc-index-change {% if crypto_pulse.btc.bias_class == 'bullish' %}up{% elif crypto_pulse.btc.bias_class == 'bearish' %}down{% else %}flat{% endif %}">
+          {{ crypto_pulse.btc.bias_label }}
+        </span>
+      </div>
+      <div class="mc-index-item">
+        <span class="mc-index-name">Ethereum</span>
+        <span class="mc-index-value">${{ "{:,.0f}".format(crypto_pulse.eth.current_price) }}</span>
+        <span class="mc-index-change {% if crypto_pulse.eth.bias_class == 'bullish' %}up{% elif crypto_pulse.eth.bias_class == 'bearish' %}down{% else %}flat{% endif %}">
+          {{ crypto_pulse.eth.bias_label }}
+        </span>
+      </div>
+      {% endif %}
+      {% if latest %}
+      <div class="mc-index-item">
+        <span class="mc-index-name">Global Regime</span>
+        <span class="mc-index-value" style="font-size:13px">{{ latest.macro.regime[:20] }}</span>
+        <span class="mc-index-change flat">Risk {{ risk_pct }}%</span>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if global_desk and global_desk.macro_ticker %}
+    <div class="global-macro-ticker" aria-label="Global macro ticker">
+      <div class="global-macro-track">
+        {% for item in global_desk.macro_ticker %}
+        <span class="macro-tick">
+          <strong>{{ item.label }}</strong> {{ item.value }}
+          {% if item.change %}<em class="{% if item.up %}up{% else %}down{% endif %}">{{ item.change }}</em>{% endif %}
+        </span>
+        {% endfor %}
+        {% for item in global_desk.macro_ticker %}
+        <span class="macro-tick" aria-hidden="true">
+          <strong>{{ item.label }}</strong> {{ item.value }}
+          {% if item.change %}<em class="{% if item.up %}up{% else %}down{% endif %}">{{ item.change }}</em>{% endif %}
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <nav class="mc-tabs">
+      <a href="#morning-brief" class="mc-tab active">Morning Brief</a>
+      <a href="#picks" class="mc-tab">Global</a>
+      <a href="#india" class="mc-tab">India</a>
+      <a href="#crypto" class="mc-tab">Crypto</a>
+      <a href="#more" class="mc-tab">More</a>
+    </nav>
+
+    <aside class="sidebar" aria-hidden="true" style="display:none">
+      <div class="sidebar-brand">
+        <div class="logo-wrap">
+          <span class="logo-icon">◈</span>
+        </div>
+        <div>
+          <strong>{{ firm_name }}</strong>
+          <span>{{ powered_by }}</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active"><span class="nav-dot"></span> Dashboard</a>
+        <a href="#picks" class="nav-item"><span class="nav-dot cyan"></span> Research notes</a>
+        <a href="#models" class="nav-item"><span class="nav-dot emerald"></span> Model books</a>
+        <a href="#crypto" class="nav-item"><span class="nav-dot rose"></span> Crypto pulse</a>
+        <a href="#india" class="nav-item"><span class="nav-dot orange"></span> India desk</a>
+        <a href="#macro" class="nav-item"><span class="nav-dot amber"></span> Macro</a>
+        <a href="#history" class="nav-item"><span class="nav-dot violet"></span> History</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="autopilot-pill">
+          <span class="pulse"></span>
+          Autopilot · {{ autopilot_time }}
+        </div>
+      </div>
+    </aside>
+
+    <div class="main-wrap">
+      <header class="topbar">
+        <div>
+          <h1>{{ firm_name }}</h1>
+          <p class="subtitle">{{ firm_role }} · {{ firm_tagline }}</p>
+        </div>
+        <div class="topbar-actions">
+          <div class="target-chip target-chip-edit" id="target-chip-brief" title="Your return goal — click to change">
+            <span class="chip-label">Target band</span>
+            <span class="chip-value target-band-display">{{ target_min }}–{{ target_max }}% / yr</span>
+            <span class="chip-edit-hint">✎</span>
+          </div>
+          <button class="btn-run" type="button" onclick="document.getElementById('run-now').click()">
+            <span class="btn-icon">▶</span>
+            <span class="btn-text">Run agent</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="disclaimer-bar">
+        <span class="warn-icon">⚠</span>
+        Research publisher only — not financial advice. {{ brand_name }} illustrative research; you self-direct all trades.
+      </div>
+
+      <div id="rerank-banner" class="rerank-banner" {% if not needs_rerank %}hidden{% endif %}>
+        <span class="rerank-banner-text">Picks were ranked for a different return target. Re-rank to match your {{ target_min }}–{{ target_max }}% goal.</span>
+        <button type="button" id="rerank-now-btn" class="btn-run sm">Re-rank picks</button>
+      </div>
+
+      <section id="morning-brief" class="morning-brief-wrap">
+        <!-- Desk activity / track record -->
+        <div class="track-record-bar">
+          <div class="track-stat">
+            <span class="track-label">Desk runs (7d)</span>
+            <span class="track-value">{{ desk_activity.runs_7d }}</span>
+          </div>
+          <div class="track-stat track-live-stat">
+            <span class="track-label">Open calls live</span>
+            <span class="track-value" id="tr-open-count">…</span>
+          </div>
+          <div class="track-stat track-live-stat">
+            <span class="track-label">Open P&amp;L avg</span>
+            <span class="track-value" id="tr-open-pnl">…</span>
+          </div>
+          <div class="track-stat track-live-stat">
+            <span class="track-label">Open win rate</span>
+            <span class="track-value" id="tr-open-win">…</span>
+          </div>
+          {% if desk_activity.hit_rate_pct is not none %}
+          <div class="track-stat">
+            <span class="track-label">Resolved hit rate</span>
+            <span class="track-value pct-up">{{ desk_activity.hit_rate_pct }}%</span>
+          </div>
+          {% endif %}
+          <div class="track-stat">
+            <span class="track-label">Global picks</span>
+            <span class="track-value">{{ desk_activity.global_picks }}</span>
+          </div>
+          <div class="track-stat">
+            <span class="track-label">India NSE picks</span>
+            <span class="track-value">{{ desk_activity.india_picks }}</span>
+          </div>
+          <div class="track-stat">
+            <span class="track-label">Markets live</span>
+            <span class="track-value">{{ desk_activity.markets_live }}/4</span>
+          </div>
+          {% if desk_activity.spy_1m_pct is not none %}
+          <div class="track-stat">
+            <span class="track-label">S&amp;P 500 (1M)</span>
+            <span class="track-value {% if desk_activity.spy_1m_pct > 0 %}pct-up{% elif desk_activity.spy_1m_pct < 0 %}pct-down{% endif %}">
+              {{ "{:+.1f}".format(desk_activity.spy_1m_pct) }}%
+            </span>
+          </div>
+          {% endif %}
+          <div class="track-stat track-stat-wide">
+            <span class="track-label">Next global scan</span>
+            <span class="track-value track-muted">{{ next_scan_label }}</span>
+          </div>
+        </div>
+
+        <div class="track-record-detail" id="track-record-detail">
+          <div class="track-open-calls">
+            <strong>Live open calls</strong>
+            <span class="track-live-meta" id="tr-updated-at">Loading live quotes…</span>
+            <ul id="tr-open-list">
+              <li class="track-loading">Fetching prices from Yahoo / CoinGecko…</li>
+            </ul>
+          </div>
+          {% if desk_activity.recent_outcomes %}
+          <div class="track-resolved">
+            <strong>Recent resolved ({{ desk_activity.resolved_outcomes }} total)</strong>
+            <ul>
+              {% for o in desk_activity.recent_outcomes %}
+              <li>
+                <span>{{ o.symbol }}</span>
+                <span class="outcome-{{ o.outcome|lower }}">{{ o.outcome }}</span>
+                <span>{% if o.return_pct is not none %}{{ "{:+.1f}".format(o.return_pct) }}%{% endif %}</span>
+                <small>{{ o.horizon }}</small>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Freshness strip -->
+        <div class="freshness-strip">
+          <span class="freshness-item fresh-{{ fresh_global.badge_class }}">
+            🌍 Global · {{ fresh_global.label }}{% if fresh_global.stale %} · stale{% endif %}
+          </span>
+          <span class="freshness-item fresh-{{ fresh_india.badge_class }}">
+            🇮🇳 India · {{ fresh_india.label }}{% if fresh_india.stale %} · refresh{% endif %}
+          </span>
+          <span class="freshness-item fresh-{{ fresh_crypto.badge_class }}">
+            ⚡ Crypto · {{ fresh_crypto.label }}
+          </span>
+        </div>
+        <div class="hero-content">
+          <p class="hero-eyebrow">{{ powered_by }} · Research Autopilot</p>
+          <h1 class="hero-title">Smarter Analysis. <em>Stronger Decisions.</em></h1>
+          <p class="hero-sub">Real-time global equities, India desk (NSE · MF · Bonds · FD), and crypto pulse — analyze, plan, and act from one platform.</p>
+        </div>
+        <div class="hero-features">
+          <a class="hero-feat hero-feat-link" href="#macro">
+            <span class="hero-feat-icon">⚡</span>
+            <span class="hero-feat-label">Live indices</span>
+            {% if india_desk and india_desk.macro.nifty %}
+            <span class="hero-feat-value">Nifty {{ "{:,.0f}".format(india_desk.macro.nifty) }}</span>
+            <span class="hero-feat-delta {% if india_desk.macro.nifty_change_pct > 0 %}up{% elif india_desk.macro.nifty_change_pct < 0 %}down{% else %}flat{% endif %}">
+              {{ "{:+.2f}".format(india_desk.macro.nifty_change_pct) }}% · VIX {{ india_desk.macro.india_vix or "—" }}
+            </span>
+            {% elif latest %}
+            <span class="hero-feat-value">{{ latest.macro.regime[:22] }}</span>
+            <span class="hero-feat-delta flat">Global risk {{ risk_pct }}%</span>
+            {% else %}
+            <span class="hero-feat-value hero-feat-muted">—</span>
+            <span class="hero-feat-delta flat">Run scan for macro</span>
+            {% endif %}
+          </a>
+          <a class="hero-feat hero-feat-link" href="#picks">
+            <span class="hero-feat-icon">📈</span>
+            <span class="hero-feat-label">Top global pick</span>
+            {% if global_picks_today %}
+            {% set top_global = global_picks_today[0] %}
+            {% set top_note = top_global.research_note if top_global.research_note is defined and top_global.research_note else none %}
+            {% set top_upside = top_global.upside_pct if top_global.upside_pct is defined else (top_note.upside_pct if top_note else 0) %}
+            <span class="hero-feat-value">{{ top_global.symbol }}</span>
+            <span class="hero-feat-delta up">
+              Score {{ (top_global.score * 100)|round|int }}{% if top_upside %} · +{{ top_upside|round(1) }}%{% endif %}
+            </span>
+            <span class="hero-feat-extra">{{ global_picks_today|length }} picks today</span>
+            {% else %}
+            <span class="hero-feat-value hero-feat-muted">No scan</span>
+            <span class="hero-feat-delta flat">Click Run Scan</span>
+            {% endif %}
+          </a>
+          <a class="hero-feat hero-feat-link" href="#india">
+            <span class="hero-feat-icon">🇮🇳</span>
+            <span class="hero-feat-label">India #1 pick</span>
+            {% if india_picks_today %}
+            {% set top_india = india_picks_today[0] %}
+            <span class="hero-feat-value">{{ top_india.nse }}</span>
+            <span class="hero-feat-delta up">+{{ top_india.upside_pct }}% · ₹{{ "{:,.0f}".format(top_india.cmp) }}</span>
+            <span class="hero-feat-extra">{{ top_india.rating }} · {{ india_picks_today|length }} NSE picks</span>
+            {% else %}
+            <span class="hero-feat-value hero-feat-muted">No picks</span>
+            <span class="hero-feat-delta flat">Tap to open · refresh desk</span>
+            {% endif %}
+          </a>
+          <a class="hero-feat hero-feat-link" href="#crypto">
+            <span class="hero-feat-icon">₿</span>
+            <span class="hero-feat-label">Crypto pulse</span>
+            {% if crypto_pulse %}
+            <span class="hero-feat-value">BTC {{ crypto_pulse.btc.bias_label }}</span>
+            <span class="hero-feat-delta {% if crypto_pulse.btc.bias_class == 'bullish' %}up{% elif crypto_pulse.btc.bias_class == 'bearish' %}down{% else %}flat{% endif %}">
+              ${{ "{:,.0f}".format(crypto_pulse.btc.current_price) }} · {{ crypto_pulse.btc.confidence_pct }}% conf
+            </span>
+            <span class="hero-feat-extra">ETH {{ crypto_pulse.eth.bias_label }} · {{ crypto_pulse.session_name }}</span>
+            {% elif latest %}
+            <span class="hero-feat-value">Risk {{ risk_pct }}%</span>
+            <span class="hero-feat-delta flat">{{ latest.macro.regime[:24] }}</span>
+            {% else %}
+            <span class="hero-feat-value hero-feat-muted">—</span>
+            <span class="hero-feat-delta flat">Refresh crypto pulse</span>
+            {% endif %}
+          </a>
+        </div>
+
+        <!-- Watchlist (saved on this device) -->
+        <div class="watchlist-panel">
+          <div class="watchlist-head">
+            <h3>⭐ Your watchlist</h3>
+            <small>Saved on this device · highlights matches in picks below</small>
+          </div>
+          <div class="watchlist-form">
+            <input id="watchlist-input" type="text" placeholder="Add symbol e.g. RELIANCE.NS, AAPL, BTC" maxlength="20" />
+            <button type="button" id="watchlist-add" class="btn-run sm">Add</button>
+          </div>
+          <ul id="watchlist-items" class="watchlist-items"></ul>
+        </div>
+
+      <!-- Picks of the Day — compact -->
+      <section class="today-picks-section" id="today-picks">
+        <div class="module-hero module-blue">
+          <div>
+            <h2>📋 Picks of the Day</h2>
+            <p>Today's top ideas across global equities, India NSE, and crypto — each market updated on its own schedule.</p>
+          </div>
+          <div class="module-pills">
+            {% if today_picks_date %}<span class="module-pill">{{ today_picks_date }}</span>{% endif %}
+            <span class="module-pill">{{ global_picks_today|length }} global</span>
+            <span class="module-pill">{{ india_picks_today|length }} India</span>
+            <span class="module-pill">{{ crypto_picks_today|length }} crypto</span>
+          </div>
+        </div>
+
+        {% if not has_today_picks %}
+        <div class="today-picks-empty">
+          <p>No picks yet today. Run a global scan or refresh the India desk and crypto pulse.</p>
+          <div class="today-picks-actions">
+            <button class="btn-run sm" type="button" onclick="document.getElementById('run-now').click()">▶ Run Global Scan</button>
+            <button class="btn-run sm" type="button" data-refresh-india>↻ India Desk</button>
+            <button class="btn-run sm" type="button" onclick="document.getElementById('refresh-global')?.click()">↻ Global Desk</button>
+            {% if crypto_pulse %}<button class="btn-run sm" type="button" onclick="document.getElementById('refresh-crypto')?.click()">↻ Crypto</button>{% endif %}
+          </div>
+        </div>
+        {% else %}
+        <div class="market-picks-grid">
+          <!-- Global -->
+          <article class="market-picks-col col-global">
+            <header class="market-picks-head">
+              <span class="market-flag">🌍</span>
+              <div>
+                <h3>Global Equities</h3>
+                <small>US · Europe · Asia · ETFs</small>
+              </div>
+              <span class="market-count">{{ global_picks_today|length }}</span>
+            </header>
+            {% if global_picks_today %}
+            <ul class="day-pick-list">
+              {% for pick in global_picks_today %}
+              {% if loop.index <= 3 %}
+              {% set note = pick.research_note if pick.research_note is defined and pick.research_note else none %}
+              {% set pick_rating = pick.rating if pick.rating is defined else (note.rating if note else 'PICK') %}
+              {% set pick_upside = pick.upside_pct if pick.upside_pct is defined else (note.upside_pct if note else 0) %}
+              {% set pick_region = pick.country if pick.country is defined else pick.region %}
+              {% set score_pct = (pick.score * 100)|round|int %}
+              <li class="day-pick-item" data-symbol="{{ pick.symbol }}">
+                <div class="day-pick-rank">{{ loop.index }}</div>
+                <div class="day-pick-body">
+                  <div class="day-pick-title">
+                    <strong>{{ pick.symbol }}</strong>
+                    <span class="mc-badge {% if 'BUY' in pick_rating %}buy{% elif 'HOLD' in pick_rating %}hold{% else %}buy{% endif %}">
+                      {{ pick_rating }}
+                    </span>
+                  </div>
+                  <span class="day-pick-name">{{ pick.name }}</span>
+                  <div class="day-pick-meta">
+                    <span>Score {{ score_pct }}</span>
+                    <span class="pct-up">+{{ pick_upside|round(1) }}%</span>
+                    <span>{{ pick_region }}</span>
+                  </div>
+                </div>
+              </li>
+              {% endif %}
+              {% endfor %}
+            </ul>
+            <a class="market-picks-link" href="#picks">View all global picks →</a>
+            {% else %}
+            <p class="market-picks-empty">No global scan yet — <button class="link-btn" type="button" onclick="document.getElementById('run-now').click()">run scan</button></p>
+            {% endif %}
+          </article>
+
+          <!-- India NSE -->
+          <article class="market-picks-col col-india">
+            <header class="market-picks-head">
+              <span class="market-flag">🇮🇳</span>
+              <div>
+                <h3>India NSE / BSE</h3>
+                <small>Ranked Indian stock picks</small>
+              </div>
+              <span class="market-count">{{ india_picks_today|length }}</span>
+            </header>
+            {% if india_picks_today %}
+            <ul class="day-pick-list">
+              {% for eq in india_picks_today %}
+              {% if loop.index <= 3 %}
+              <li class="day-pick-item" data-symbol="{{ eq.nse }}">
+                <div class="day-pick-rank">{{ loop.index }}</div>
+                <div class="day-pick-body">
+                  <div class="day-pick-title">
+                    <strong>{{ eq.nse }}</strong>
+                    <span class="mc-badge buy">{{ eq.rating }}</span>
+                  </div>
+                  <span class="day-pick-name">{{ eq.name }}</span>
+                  <div class="day-pick-meta">
+                    <span>₹{{ "{:,.0f}".format(eq.cmp) }}</span>
+                    <span class="pct-up">+{{ eq.upside_pct }}%</span>
+                    <span>Tier {{ eq.risk_tier }}</span>
+                  </div>
+                  <p class="day-pick-note">{{ eq.desk_note }}</p>
+                </div>
+              </li>
+              {% endif %}
+              {% endfor %}
+            </ul>
+            <a class="market-picks-link" href="#india">Full India desk →</a>
+            {% else %}
+            <p class="market-picks-empty">No India picks — <button class="link-btn" type="button" data-refresh-india>refresh desk</button></p>
+            {% endif %}
+          </article>
+
+          <!-- Crypto -->
+          <article class="market-picks-col col-crypto">
+            <header class="market-picks-head">
+              <span class="market-flag">⚡</span>
+              <div>
+                <h3>Crypto Pulse</h3>
+                <small>Hourly BTC / ETH bias</small>
+              </div>
+              <span class="market-count">{{ crypto_picks_today|length }}</span>
+            </header>
+            {% if crypto_picks_today %}
+            <ul class="day-pick-list">
+              {% for coin in crypto_picks_today %}
+              <li class="day-pick-item crypto-{{ coin.bias_class }}">
+                <div class="day-pick-body">
+                  <div class="day-pick-title">
+                    <strong>{{ coin.asset }}</strong>
+                    <span class="mc-badge {% if coin.bias_class == 'bullish' %}buy{% elif coin.bias_class == 'bearish' %}sell{% else %}hold{% endif %}">
+                      {{ coin.bias_label }}
+                    </span>
+                  </div>
+                  <div class="day-pick-meta">
+                    <span>${{ "{:,.0f}".format(coin.current_price) }}</span>
+                    <span>{{ coin.confidence_pct }}% conf</span>
+                  </div>
+                  <div class="day-pick-meta">
+                    <span class="{% if coin.bias_class == 'bullish' %}pct-up{% elif coin.bias_class == 'bearish' %}pct-down{% endif %}">
+                      ▲ ${{ "{:,.0f}".format(coin.target_upside) }} / ▼ ${{ "{:,.0f}".format(coin.target_downside) }}
+                    </span>
+                  </div>
+                  <p class="day-pick-note">{{ coin.desk_note }}</p>
+                </div>
+              </li>
+              {% endfor %}
+            </ul>
+            <a class="market-picks-link" href="#crypto">Full crypto pulse →</a>
+            {% else %}
+            <p class="market-picks-empty">No crypto pulse — <button class="link-btn" type="button" onclick="document.getElementById('refresh-crypto')?.click()">refresh</button></p>
+            {% endif %}
+          </article>
+        </div>
+        {% endif %}
+      </section>
+      </section><!-- /morning-brief -->
+
+      {% if not latest %}
+      <section class="empty-hero">
+        <div class="empty-glow"></div>
+        <div class="empty-icon">🌍</div>
+        <h2>Ready for first scan</h2>
+        <p>Launch the autopilot agent to analyze global conditions, news, and equities worldwide.</p>
+        <button class="btn-run large" onclick="document.getElementById('run-now').click()">
+          <span class="btn-icon">▶</span> Start first analysis
+        </button>
+      </section>
+      {% else %}
+
+      <section id="overview">
+      <!-- KPI widgets -->
+      <section class="kpi-grid">
+        <article class="kpi-card kpi-cyan">
+          <div class="kpi-icon">📊</div>
+          <div class="kpi-body">
+            <span class="kpi-label">Daily picks</span>
+            <span class="kpi-value">{{ latest.picks|length }}</span>
+          </div>
+          <div class="kpi-bar"><div style="width: {{ (latest.picks|length / 8 * 100)|int }}%"></div></div>
+        </article>
+        <article class="kpi-card kpi-violet">
+          <div class="kpi-icon">🔍</div>
+          <div class="kpi-body">
+            <span class="kpi-label">Symbols scanned</span>
+            <span class="kpi-value">{{ latest.scanned }}</span>
+          </div>
+        </article>
+        <article class="kpi-card kpi-emerald">
+          <div class="kpi-icon">⭐</div>
+          <div class="kpi-body">
+            <span class="kpi-label">Avg score</span>
+            <span class="kpi-value">{{ avg_score }}<small>/100</small></span>
+          </div>
+        </article>
+        <article class="kpi-card kpi-amber">
+          <div class="kpi-icon">🎯</div>
+          <div class="kpi-body">
+            <span class="kpi-label">Return target</span>
+            <span class="kpi-value target-band-display">{{ target_min }}–{{ target_max }}<small>%</small></span>
+          </div>
+        </article>
+      </section>
+      </section>
+
+      {% if crypto_pulse %}
+      <section class="crypto-pulse-section" id="crypto">
+        <div class="module-hero module-purple">
+          <div>
+            <h2>⚡ Crypto Pulse — BTC / ETH</h2>
+            <p>{{ crypto_pulse.session_name }} session · {{ crypto_pulse.session_liquidity_note }}</p>
+          </div>
+          <div class="module-pills">
+            <span class="freshness-item fresh-{{ fresh_crypto.badge_class }}">{{ fresh_crypto.label }}</span>
+            <button id="refresh-crypto" class="btn-run sm" type="button">↻ Refresh</button>
+          </div>
+        </div>
+        {% if crypto_pulse.btc_streak > 1 or crypto_pulse.eth_streak > 1 %}
+        <div class="crypto-streaks">
+          {% if crypto_pulse.btc_streak > 1 %}
+          <span class="streak-badge">BTC: {{ crypto_pulse.btc_streak }} consecutive {{ crypto_pulse.btc.bias_class|upper }} calls ✅</span>
+          {% endif %}
+          {% if crypto_pulse.eth_streak > 1 %}
+          <span class="streak-badge">ETH: {{ crypto_pulse.eth_streak }} consecutive {{ crypto_pulse.eth.bias_class|upper }} calls ✅</span>
+          {% endif %}
+          {% if crypto_pulse.eth_btc_trend != 'Neutral' %}
+          <span class="streak-badge eth-ratio">{{ crypto_pulse.eth_btc_trend }}</span>
+          {% endif %}
+        </div>
+        {% endif %}
+        <div class="crypto-grid">
+          {% for coin in [crypto_pulse.btc, crypto_pulse.eth] %}
+          <article class="crypto-card crypto-{{ coin.bias_class }}">
+            <header class="crypto-card-head">
+              <span class="crypto-asset">{{ coin.asset }}</span>
+              <span class="crypto-bias-badge">{{ coin.bias_label }}</span>
+            </header>
+            <div class="crypto-price">${{ "{:,.2f}".format(coin.current_price) }}</div>
+            <div class="crypto-confidence">
+              <span class="conf-label">Confidence</span>
+              <span class="conf-value">{{ coin.confidence_pct }}%</span>
+              <span class="conf-tier">{{ coin.confidence_label }}</span>
+            </div>
+            {% if coin.prior_outcome %}
+            <div class="crypto-prior">{{ coin.prior_outcome }}</div>
+            {% endif %}
+            <div class="crypto-signals">
+              <span class="sig {{ coin.signals.on_chain|lower }}">On-chain: {{ coin.signals.on_chain }}</span>
+              <span class="sig {{ coin.signals.derivatives|lower }}">Deriv: {{ coin.signals.derivatives }}</span>
+              <span class="sig {{ coin.signals.macro|lower }}">Macro: {{ coin.signals.macro }}</span>
+              <span class="sig {{ coin.signals.sentiment|lower }}">Sentiment: {{ coin.signals.sentiment }}</span>
+            </div>
+            <p class="crypto-driver"><strong>Key driver:</strong> {{ coin.key_driver }}</p>
+            <div class="crypto-targets">
+              <span class="up">▲ ${{ "{:,.0f}".format(coin.target_upside) }} (+{{ coin.target_upside_pct }}%)</span>
+              <span class="down">▼ ${{ "{:,.0f}".format(coin.target_downside) }} (-{{ coin.target_downside_pct }}%)</span>
+            </div>
+            <p class="crypto-inval">Invalidation: ${{ "{:,.0f}".format(coin.invalidation) }}</p>
+            {% if coin.volatility_warning %}
+            <p class="crypto-vol-warn">{{ coin.volatility_warning }}</p>
+            {% endif %}
+            {% if coin.eth_btc_note %}
+            <p class="crypto-eth-note">{{ coin.eth_btc_note }}</p>
+            {% endif %}
+            <p class="crypto-desk">{{ coin.desk_note }}</p>
+          </article>
+          {% endfor %}
+        </div>
+
+        <div class="crypto-research-panel">
+          <div class="crypto-research-head">
+            <h3>Token research (CoinGecko)</h3>
+            <small>Mode 3 — any major alt e.g. SOL, TAO, LINK</small>
+          </div>
+          <div class="crypto-research-form">
+            <input id="crypto-research-input" type="text" placeholder="Symbol e.g. SOL" maxlength="12" />
+            <button type="button" id="crypto-research-btn" class="btn-run sm">Analyse</button>
+          </div>
+          <pre id="crypto-research-out" class="crypto-research-out">Enter a symbol to load full token note.</pre>
+        </div>
+      </section>
+      {% endif %}
+
+      {% if india_desk %}
+      <section class="india-desk-section" id="india">
+        <div class="module-hero module-green">
+          <div>
+            <h2>🇮🇳 {{ brand_name }} India Desk</h2>
+            <p>{{ india_desk.opening_statement }}</p>
+          </div>
+          <div class="module-pills">
+            <span class="freshness-item fresh-{{ fresh_india.badge_class }}">{{ fresh_india.label }}</span>
+            <button id="refresh-india" class="btn-run sm" type="button">↻ Refresh</button>
+          </div>
+        </div>
+
+        {% if india_desk %}
+        <div class="curated-notice">
+          <strong>MF · Bonds · FD:</strong> Desk-curated advisory — verify live rates with issuer before investing.
+          <span class="curated-date">Updated {{ fresh_advisory.label }}{% if india_desk.captured_at %} · {{ india_desk.captured_at[:10] }}{% endif %}</span>
+        </div>
+        {% endif %}
+
+        <div class="india-board">
+          <!-- Equities -->
+          <article class="india-panel panel-equities full-width" id="india-picks">
+            <div class="india-panel-head">
+              <h3>🏦 India Stock Picks · NSE / BSE</h3>
+              <span class="panel-count">{{ india_desk.equities|length }} picks today</span>
+            </div>
+            <div class="mc-table-wrap">
+              <table class="mc-table">
+                <thead>
+                  <tr>
+                    <th>Stock</th>
+                    <th>Rating</th>
+                    <th>CMP</th>
+                    <th>Target</th>
+                    <th>Upside</th>
+                    <th>Tier</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for eq in india_desk.equities %}
+                  <tr>
+                    <td><strong>{{ eq.nse }}</strong><span class="mc-stock-name">{{ eq.name }}</span></td>
+                    <td><span class="mc-badge buy">{{ eq.rating }}</span></td>
+                    <td>₹{{ "{:,.0f}".format(eq.cmp) }}</td>
+                    <td>₹{{ "{:,.0f}".format(eq.target_12m) }}</td>
+                    <td class="pct-up">+{{ eq.upside_pct }}%</td>
+                    <td>T{{ eq.risk_tier }}</td>
+                  </tr>
+                  {% else %}
+                  <tr><td colspan="6" class="empty-advisory">No equity picks yet — click Refresh India Desk</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% for eq in india_desk.equities %}
+            <div class="india-card risk-{{ eq.risk_class }}">
+              <div class="india-card-head">
+                <strong>{{ eq.nse }}</strong>
+                <span class="india-rating">{{ eq.rating }}</span>
+              </div>
+              <p class="india-sub">{{ eq.name }} · {{ eq.cap_segment }} · Tier {{ eq.risk_tier }}</p>
+              <p class="india-yield">CMP ₹{{ "{:,.0f}".format(eq.cmp) }} → Target ₹{{ "{:,.0f}".format(eq.target_12m) }} (+{{ eq.upside_pct }}%)</p>
+              <p class="india-desk-line">{{ eq.desk_note }}</p>
+            </div>
+            {% endfor %}
+          </article>
+
+          <!-- Mutual Funds -->
+          <article class="india-panel panel-mf">
+            <div class="india-panel-head">
+              <h3>📊 Mutual Funds</h3>
+              <span class="panel-count">{{ india_desk.mutual_funds|length }} funds</span>
+            </div>
+            <div class="advisory-table-wrap">
+              <table class="mc-table">
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Fund</th>
+                    <th>Rating</th>
+                    <th>1Y</th>
+                    <th>3Y</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for mf in india_desk.mutual_funds %}
+                  <tr>
+                    <td><strong>{{ mf.category }}</strong></td>
+                    <td>{{ mf.fund_name }}<span class="mc-stock-name">ER {{ mf.expense_direct }}</span></td>
+                    <td><span class="mc-badge buy">{{ mf.rating_label }}</span></td>
+                    <td class="pct-up">{{ mf.returns_1y }}</td>
+                    <td>{{ mf.returns_3y }}</td>
+                  </tr>
+                  {% else %}
+                  <tr><td colspan="5" class="empty-advisory">No MF data — refresh India desk</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <div class="advisory-cards">
+              {% for mf in india_desk.mutual_funds %}
+              <div class="advisory-card risk-{{ mf.risk_class }}">
+                <div class="advisory-card-head">
+                  <strong>{{ mf.fund_name }}</strong>
+                  <span class="advisory-rating">{{ mf.rating_label }}</span>
+                </div>
+                <p class="advisory-meta">{{ mf.category }} · 1Y {{ mf.returns_1y }} · 3Y {{ mf.returns_3y }}</p>
+                <p class="advisory-desk">{{ mf.desk_note }}</p>
+              </div>
+              {% endfor %}
+            </div>
+          </article>
+
+          <!-- Bonds -->
+          <article class="india-panel panel-bonds">
+            <div class="india-panel-head">
+              <h3>🏛️ Bonds</h3>
+              <span class="panel-count">{{ india_desk.bonds|length }} instruments</span>
+            </div>
+            <div class="advisory-table-wrap">
+              <table class="mc-table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Instrument</th>
+                    <th>Rating</th>
+                    <th>Yield</th>
+                    <th>Tenor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for b in india_desk.bonds %}
+                  <tr>
+                    <td><strong>{{ b.instrument_type }}</strong></td>
+                    <td>{{ b.instrument }}</td>
+                    <td><span class="mc-badge buy">{{ b.credit_rating }}</span></td>
+                    <td class="pct-up">{{ b.yield_label }}</td>
+                    <td>{{ b.tenor }}</td>
+                  </tr>
+                  {% else %}
+                  <tr><td colspan="5" class="empty-advisory">No bond data — refresh India desk</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <div class="advisory-cards">
+              {% for b in india_desk.bonds %}
+              <div class="advisory-card risk-{{ b.risk_class }}">
+                <div class="advisory-card-head">
+                  <strong>{{ b.instrument }}</strong>
+                  <span class="advisory-rating">{{ b.credit_rating }}</span>
+                </div>
+                <p class="advisory-meta">{{ b.yield_label }} · {{ b.tenor }}</p>
+                <p class="advisory-desk">{{ b.desk_note }}</p>
+              </div>
+              {% endfor %}
+            </div>
+          </article>
+
+          <!-- Fixed Deposits -->
+          <article class="india-panel panel-fd">
+            <div class="india-panel-head">
+              <h3>💰 Fixed Deposits</h3>
+              <span class="panel-count">{{ india_desk.fixed_deposits|length }} deals</span>
+            </div>
+            <div class="advisory-table-wrap">
+              <table class="mc-table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Instrument</th>
+                    <th>Rating</th>
+                    <th>Rate</th>
+                    <th>Tenor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for fd in india_desk.fixed_deposits %}
+                  <tr>
+                    <td><strong>{{ fd.instrument_type }}</strong></td>
+                    <td>{{ fd.instrument }}</td>
+                    <td><span class="mc-badge buy">{{ fd.credit_rating }}</span></td>
+                    <td class="pct-up">{{ fd.yield_label }}</td>
+                    <td>{{ fd.tenor }}</td>
+                  </tr>
+                  {% else %}
+                  <tr><td colspan="5" class="empty-advisory">No FD data — refresh India desk</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <div class="advisory-cards">
+              {% for fd in india_desk.fixed_deposits %}
+              <div class="advisory-card risk-{{ fd.risk_class }}">
+                <div class="advisory-card-head">
+                  <strong>{{ fd.instrument }}</strong>
+                  <span class="advisory-rating">{{ fd.credit_rating }}</span>
+                </div>
+                <p class="advisory-meta">{{ fd.yield_label }} · {{ fd.tenor }}</p>
+                <p class="advisory-desk">{{ fd.desk_note }}</p>
+              </div>
+              {% endfor %}
+            </div>
+          </article>
+        </div>
+        <p class="india-disclaimer">{{ india_desk.disclaimer }}</p>
+      </section>
+      {% endif %}
+
+      <section id="more" class="more-section">
+      <section class="dashboard-grid" id="macro">
+        <!-- Regime widget -->
+        <article class="widget widget-regime">
+          <div class="widget-head">
+            <h2>Global regime</h2>
+            <span class="live-tag"><span class="pulse sm"></span> Live</span>
+          </div>
+          <div class="regime-body">
+            <div class="risk-gauge" data-risk="{{ risk_pct }}">
+              <svg viewBox="0 0 120 120" class="gauge-svg">
+                <circle cx="60" cy="60" r="52" class="gauge-track" />
+                <circle cx="60" cy="60" r="52" class="gauge-fill" id="gauge-fill" />
+              </svg>
+              <div class="gauge-center">
+                <span class="gauge-num" id="gauge-num">{{ risk_pct }}</span>
+                <span class="gauge-sub">risk</span>
+              </div>
+            </div>
+            <div class="regime-info">
+              <span class="regime-badge {{ regime_class }}">{{ latest.macro.regime }}</span>
+              <p class="regime-summary">{{ latest.macro.summary }}</p>
+              <p class="regime-meta">Last run · {{ latest.finished_at[:19] }} UTC</p>
+            </div>
+          </div>
+        </article>
+
+        <!-- Macro indicators -->
+        <article class="widget widget-macro">
+          <div class="widget-head">
+            <h2>Macro pulse</h2>
+            <span class="widget-sub">{{ latest.macro.indicators|length }} indicators</span>
+          </div>
+          <div class="macro-grid">
+            {% for key, val in latest.macro.indicators.items() %}
+            <div class="macro-tile {% if val is number and val > 0 %}up{% elif val is number and val < 0 %}down{% endif %}">
+              <span class="macro-key">{{ key|replace('_', ' ') }}</span>
+              <strong class="macro-val">
+                {% if val is number and val > 0 %}+{% endif %}{{ val }}{% if 'pct' in key %}%{% endif %}
+              </strong>
+            </div>
+            {% endfor %}
+          </div>
+        </article>
+
+        <!-- Region allocation widget -->
+        <article class="widget widget-regions">
+          <div class="widget-head">
+            <h2>Pick geography</h2>
+            <span class="widget-sub">Diversification</span>
+          </div>
+          <div class="region-bars">
+            {% set colors = ['cyan', 'violet', 'emerald', 'amber', 'rose'] %}
+            {% for region, count in region_stats.items() %}
+            <div class="region-row">
+              <span class="region-name">{{ region }}</span>
+              <div class="region-track">
+                <div class="region-fill {{ colors[loop.index0 % 5] }}" style="width: {{ (count / latest.picks|length * 100)|int }}%"></div>
+              </div>
+              <span class="region-count">{{ count }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="sector-cloud">
+            {% for sector, count in sector_stats.items() %}
+            <span class="sector-tag">{{ sector }} · {{ count }}</span>
+            {% endfor %}
+          </div>
+        </article>
+
+        <!-- Agent timeline -->
+        <article class="widget widget-log">
+          <div class="widget-head">
+            <h2>Agent timeline</h2>
+            <span class="status-pill ok">{{ latest.status }}</span>
+          </div>
+          <ul class="timeline">
+            {% for line in latest.log %}
+            <li>
+              <span class="tl-dot"></span>
+              <span class="tl-text">{{ line }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </article>
+      </section>
+
+      <!-- Picks -->
+      <section class="picks-section" id="picks">
+        {% if global_desk %}
+        <div class="module-hero module-teal global-desk-hero">
+          <div>
+            <h2>🌐 {{ brand_name }} Global Intelligence</h2>
+            <p>{{ global_desk.opening_statement[:160] }}…</p>
+          </div>
+          <div class="module-pills">
+            <span class="freshness-item fresh-{{ fresh_global.badge_class }}">{{ fresh_global.label }}</span>
+            <button id="refresh-global" class="btn-run sm" type="button">↻ Refresh Global Desk</button>
+          </div>
+        </div>
+
+        <div class="global-desk-grid">
+          <article class="desk-col desk-us">
+            <header class="desk-col-head">
+              <span>🇺🇸 US Desk</span>
+              <small>NYSE / NASDAQ</small>
+            </header>
+            {% set us_board = global_desk.regional_boards | selectattr('market_id', 'equalto', 'us') | list | first %}
+            {% if us_board %}
+            <ul class="desk-mini-list">
+              {% for p in us_board.picks[:5] %}
+              <li><span class="desk-rank">#{{ p.rank }}</span><strong>{{ p.symbol }}</strong><span class="mc-badge buy">{{ p.rating }}</span><span class="pct-up">+{{ p.upside_pct }}%</span></li>
+              {% endfor %}
+            </ul>
+            <p class="desk-risk"><strong>Risk:</strong> {{ us_board.top_risk }}</p>
+            {% else %}<p class="desk-empty">Run global desk</p>{% endif %}
+          </article>
+
+          <article class="desk-col desk-global">
+            <header class="desk-col-head">
+              <span>🌍 Global Regions</span>
+              <small>Top cross-market ideas</small>
+            </header>
+            {% if global_desk.global_top_picks %}
+            <ul class="desk-mini-list">
+              {% for p in global_desk.global_top_picks[:5] %}
+              <li><span class="desk-rank">#{{ p.rank }}</span><strong>{{ p.symbol }}</strong><span class="desk-country">{{ p.country }}</span><span class="pct-up">+{{ p.upside_pct }}%</span></li>
+              {% endfor %}
+            </ul>
+            {% else %}<p class="desk-empty">No regional scan yet</p>{% endif %}
+          </article>
+
+          <article class="desk-col desk-india">
+            <header class="desk-col-head">
+              <span>🇮🇳 India</span>
+              <small>NSE · MF · Bonds</small>
+            </header>
+            {% if india_picks_today %}
+            <ul class="desk-mini-list">
+              {% for eq in india_picks_today[:3] %}
+              <li><strong>{{ eq.nse }}</strong><span class="mc-badge buy">{{ eq.rating }}</span><span class="pct-up">+{{ eq.upside_pct }}%</span></li>
+              {% endfor %}
+            </ul>
+            {% if india_desk %}<p class="desk-risk">Nifty {{ "{:,.0f}".format(india_desk.macro.nifty) }} · {{ india_desk.macro.rbi_stance }}</p>{% endif %}
+            {% else %}<p class="desk-empty"><button class="link-btn" data-refresh-india>Refresh India desk</button></p>{% endif %}
+          </article>
+
+          <article class="desk-col desk-crypto">
+            <header class="desk-col-head">
+              <span>₿ Crypto Pulse</span>
+              <small>All tiers</small>
+            </header>
+            {% if global_desk.crypto_board %}
+            <ul class="desk-mini-list crypto-tier-list">
+              {% for c in global_desk.crypto_board %}
+              <li class="crypto-{{ c.bias_class }}"><span class="desk-cat">{{ c.category }}</span><strong>{{ c.token }}</strong><span>{{ c.bias }}</span></li>
+              {% endfor %}
+            </ul>
+            {% elif crypto_pulse %}
+            <ul class="desk-mini-list">
+              <li>BTC {{ crypto_pulse.btc.bias_label }} · ${{ "{:,.0f}".format(crypto_pulse.btc.current_price) }}</li>
+              <li>ETH {{ crypto_pulse.eth.bias_label }} · ${{ "{:,.0f}".format(crypto_pulse.eth.current_price) }}</li>
+            </ul>
+            {% else %}<p class="desk-empty">Refresh crypto pulse</p>{% endif %}
+          </article>
+        </div>
+
+        {% if global_desk.signal_stack %}
+        <div class="signal-stack-panel">
+          <h3>Global Signal Stack</h3>
+          <div class="signal-stack-grid">
+            <div><span class="sig-label">S&amp;P trend</span><strong>{{ global_desk.signal_stack.us_markets.sp500_trend }}</strong></div>
+            <div><span class="sig-label">VIX</span><strong>{{ global_desk.signal_stack.us_markets.vix or '—' }}</strong></div>
+            <div><span class="sig-label">Risk</span><strong>{{ global_desk.signal_stack.us_markets.risk_sentiment }}</strong></div>
+            <div><span class="sig-label">Regime</span><strong>{{ global_desk.signal_stack.global_risk.regime }}</strong></div>
+            <div><span class="sig-label">Gold</span><strong>{% if global_desk.signal_stack.commodities.gold %}${{ "{:,.0f}".format(global_desk.signal_stack.commodities.gold) }}{% else %}—{% endif %}</strong></div>
+            <div><span class="sig-label">Oil</span><strong>{% if global_desk.signal_stack.commodities.brent %}${{ "{:,.2f}".format(global_desk.signal_stack.commodities.brent) }}{% else %}—{% endif %}</strong></div>
+            {% set cp = global_desk.signal_stack.crypto_pulse or {} %}
+            {% if cp.total_market_cap_usd %}
+            <div><span class="sig-label">Crypto mcap</span><strong>${{ "{:,.0f}".format(cp.total_market_cap_usd / 1e12) }}T</strong></div>
+            {% endif %}
+            {% if cp.defi_tvl_usd %}
+            <div><span class="sig-label">DeFi TVL</span><strong>${{ "{:,.0f}".format(cp.defi_tvl_usd / 1e9) }}B</strong></div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if global_desk.regional_boards %}
+        <div class="regional-boards-wrap">
+          <h3>Regional Top Picks</h3>
+          <div class="regional-boards-grid">
+            {% for board in global_desk.regional_boards %}
+            <article class="regional-board-card">
+              <header>
+                <h4>{{ board.label }}</h4>
+                <small>{{ board.theme }}</small>
+              </header>
+              <table class="mc-table compact">
+                <thead><tr><th>#</th><th>Ticker</th><th>Rating</th><th>Target</th></tr></thead>
+                <tbody>
+                  {% for p in board.picks %}
+                  <tr>
+                    <td>{{ p.rank }}</td>
+                    <td><strong>{{ p.symbol }}</strong></td>
+                    <td><span class="mc-badge buy">{{ p.rating }}</span></td>
+                    <td class="pct-up">+{{ p.upside_pct }}%</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              {% if board.avoids %}
+              <div class="board-avoids">
+                <strong>Avoid:</strong>
+                {% for a in board.avoids %}<span>{{ a.symbol }} ({{ a.rating }})</span>{% if not loop.last %} · {% endif %}{% endfor %}
+              </div>
+              {% endif %}
+            </article>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        {% endif %}
+
+        {% if latest %}
+        <div class="module-hero module-blue">
+          <div>
+            <h2>Global Equity Picks</h2>
+            <p>{{ brand_name }} research desk · ranked by composite score across regions</p>
+          </div>
+          <span class="panel-count pick-count">{{ latest.picks|length }} stocks · {{ fresh_global.label }}</span>
+        </div>
+
+        <div class="mc-table-wrap">
+          <table class="mc-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Company</th>
+                <th>Sector</th>
+                <th>Rating</th>
+                <th>Score</th>
+                <th>Target</th>
+                <th>Upside</th>
+                <th>Region</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for pick in latest.picks %}
+              {% set note = pick.research_note %}
+              {% set score_pct = (pick.score * 100)|round|int %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>
+                  <strong>{{ pick.symbol }}</strong>
+                  <span class="mc-stock-name">{{ pick.name }}</span>
+                </td>
+                <td>{{ pick.sector }}</td>
+                <td>
+                  {% if note %}
+                  <span class="mc-badge {% if 'BUY' in note.rating %}buy{% elif 'HOLD' in note.rating %}hold{% else %}sell{% endif %}">{{ note.rating }}</span>
+                  {% else %}—{% endif %}
+                </td>
+                <td><strong>{{ score_pct }}</strong></td>
+                <td>{% if note %}${{ (note.price_target or 0)|round(2) }}{% else %}—{% endif %}</td>
+                <td class="{% if note and (note.upside_pct or 0) > 0 %}pct-up{% else %}pct-down{% endif %}">
+                  {% if note %}+{{ (note.upside_pct or 0)|round(1) }}%{% else %}—{% endif %}
+                </td>
+                <td>{{ pick.region }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="picks-grid">
+          {% for pick in latest.picks %}
+          {% set score_pct = (pick.score * 100)|round|int %}
+          {% set note = pick.research_note %}
+          {% set rank_colors = ['gold', 'silver', 'bronze', 'blue', 'blue', 'blue', 'blue', 'blue'] %}
+          <article class="pick-card apex-card" style="--score: {{ score_pct }}; --accent-h: {{ (220 + loop.index * 25) % 360 }}">
+            <div class="pick-rank rank-{{ rank_colors[loop.index0] if loop.index0 < 3 else 'blue' }}">#{{ loop.index }}</div>
+            <div class="apex-card-head">
+              <span class="apex-label">{{ brand_name|upper }} EQUITY RESEARCH</span>
+            </div>
+            <div class="pick-header">
+              <div class="pick-symbol-wrap">
+                <h3>{{ pick.symbol }}</h3>
+                <p>{{ pick.name }}</p>
+              </div>
+              <div class="score-ring">
+                <svg viewBox="0 0 64 64">
+                  <circle cx="32" cy="32" r="28" class="ring-track" />
+                  <circle cx="32" cy="32" r="28" class="ring-fill" stroke-dasharray="{{ score_pct * 1.76 }} 176" />
+                </svg>
+                <span>{{ score_pct }}</span>
+              </div>
+            </div>
+            {% if note %}
+            <div class="apex-badges">
+              <span class="tier-badge tier-{{ note.risk_tier }}">Tier {{ note.risk_tier }}</span>
+              <span class="rating-badge">{{ note.rating }}</span>
+              <span class="conviction-badge">{{ note.conviction }}</span>
+            </div>
+            <div class="apex-targets">
+              <span>Target <strong>${{ (note.price_target or 0)|round(2) }}</strong></span>
+              <span class="up">+{{ (note.upside_pct or 0)|round(1) }}%</span>
+              <span class="down">-{{ (note.downside_pct or 0)|round(1) }}%</span>
+              <span>Now ${{ (note.current_price or note.support or 0)|round(2) }}</span>
+            </div>
+            {% if note.thesis %}
+            <div class="apex-block">
+              <h4>Investment thesis</h4>
+              <ul>
+                {% for t in note.thesis %}
+                <li>{{ t }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+            {% endif %}
+            <div class="apex-block">
+              <h4>Technical setup</h4>
+              <p>{{ note.trend }} · RSI {{ (note.rsi or 50)|round|int }} · {{ note.macd_signal }} · Support ${{ (note.support or 0)|round(2) }} / Resistance ${{ (note.resistance or 0)|round(2) }}</p>
+              <p class="muted">{{ note.pattern }}</p>
+            </div>
+            <div class="apex-block">
+              <h4>Position sizing</h4>
+              <p>Conservative {{ note.size_conservative }} · Balanced {{ note.size_balanced }} · Aggressive {{ note.size_aggressive }}</p>
+            </div>
+            <div class="desk-comment">
+              <strong>Desk comment:</strong> {{ note.desk_comment }}
+            </div>
+            {% else %}
+            <div class="pick-chips">
+              <span class="chip region">{{ pick.region }}</span>
+              <span class="chip sector">{{ pick.sector }}</span>
+            </div>
+            <p class="pick-rationale">{{ pick.rationale }}</p>
+            {% endif %}
+            {% if pick.themes %}
+            <div class="theme-row">
+              {% for t in pick.themes %}
+              <span class="theme-badge">{{ t|replace('_', ' ') }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+            {% if pick.news_highlights %}
+            <div class="news-widget">
+              <span class="news-label">📰 Headlines</span>
+              <ul>
+                {% for h in pick.news_highlights %}
+                <li>{{ h }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+            {% endif %}
+            {% if pick.research_note_text %}
+            <details class="research-full">
+              <summary>Full research note</summary>
+              <pre>{{ pick.research_note_text }}</pre>
+            </details>
+            {% endif %}
+          </article>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </section>
+
+      {% if latest.model_portfolios %}
+      <section class="picks-section" id="models">
+        <div class="module-hero module-gold">
+          <div>
+            <h2>Model Portfolios</h2>
+            <p>Trade smarter · grow consistently — publisher research for self-directed investors</p>
+          </div>
+          <span class="panel-count pick-count">{{ latest.model_portfolios|length }} models</span>
+        </div>
+        <div class="models-grid">
+          {% for model in latest.model_portfolios %}
+          <article class="widget model-card">
+            <div class="widget-head">
+              <h2>{{ model.label }}</h2>
+              <span class="widget-sub">Cash {{ (model.cash_pct * 100)|round|int }}% · vs {{ model.benchmark }}</span>
+            </div>
+            <p class="model-desc">{{ model.description }}</p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Symbol</th>
+                    <th>Weight</th>
+                    <th>Score</th>
+                    <th>Sector</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for h in model.holdings %}
+                  <tr>
+                    <td><strong>{{ h.symbol }}</strong><br/><span class="muted">{{ h.name }}</span></td>
+                    <td><span class="scan-badge">{{ (h.weight * 100)|round(1) }}%</span></td>
+                    <td>{{ (h.score * 100)|round|int }}</td>
+                    <td>{{ h.sector }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      <!-- History -->
+      <section class="widget widget-history" id="history">
+        <div class="widget-head">
+          <h2>Run history</h2>
+          <span class="widget-sub">Last {{ runs|length }} cycles</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Run ID</th>
+                <th>Finished</th>
+                <th>Status</th>
+                <th>Scanned</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in runs %}
+              <tr>
+                <td><code class="run-id">{{ r.run_id }}</code></td>
+                <td>{{ r.finished_at[:19] }}</td>
+                <td><span class="status-pill ok">{{ r.status }}</span></td>
+                <td><span class="scan-badge">{{ r.scanned }}</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {% endif %}
+
+      <section class="settings-section" id="settings">
+        <div class="section-banner">
+          <div>
+            <h2>Settings</h2>
+            <p>Personalize your markets desk on this device</p>
+          </div>
+        </div>
+        <div class="settings-grid">
+          <article class="settings-card">
+            <h3>Appearance</h3>
+            <p>Switch between a bright trading-floor layout and a low-glare night desk mode. Your choice is saved locally.</p>
+            <div class="theme-options">
+              <button type="button" class="theme-option" data-theme="light">
+                <div class="theme-preview light-preview"><span></span><span></span></div>
+                <strong>Light desk</strong>
+                <small>Bright · high contrast · daytime trading</small>
+              </button>
+              <button type="button" class="theme-option" data-theme="dark">
+                <div class="theme-preview dark-preview"><span></span><span></span></div>
+                <strong>Dark desk</strong>
+                <small>Premium terminal · low glare · evening</small>
+              </button>
+            </div>
+          </article>
+          <article class="settings-card">
+            <h3>Return goal</h3>
+            <p>What annual return are you screening for? Picks and model portfolios are ranked to this band — not a guarantee.</p>
+            <form id="target-profile-form" class="target-profile-form">
+              <label>
+                Min % / yr
+                <input type="number" id="target-min-input" min="1" max="99" step="1" value="{{ target_min }}" />
+              </label>
+              <label>
+                Max % / yr
+                <input type="number" id="target-max-input" min="1" max="100" step="1" value="{{ target_max }}" />
+              </label>
+              <button type="submit" class="btn-run sm">Save target</button>
+            </form>
+            <p id="target-save-msg" class="muted" style="margin-top:10px;margin-bottom:0"></p>
+          </article>
+          <article class="settings-card">
+            <h3>About {{ brand_name }}</h3>
+            <p>
+              {{ firm_tagline }}. Powered by {{ powered_by }} — publisher research only, not financial advice.
+              Daily email subject remains <strong>Stock Autopilot Daily</strong>.
+            </p>
+            <p class="muted" style="margin-top:12px;margin-bottom:0">
+              Autopilot schedule · {{ autopilot_time }} · Target band <span class="target-band-display">{{ target_min }}–{{ target_max }}</span>% / yr
+            </p>
+          </article>
+        </div>
+      </section>
+      </section><!-- /more -->
+
+      <footer class="app-footer">
+        <span><strong>{{ brand_name }}</strong> · {{ brand_tagline }}</span>
+        <span>Powered by {{ powered_by }} · Research publisher only</span>
+      </footer>
+    </div>
+
+    <dialog id="target-dialog" class="target-dialog">
+      <form method="dialog" id="target-dialog-form">
+        <h3>Your return goal</h3>
+        <p class="muted">Screening band for picks — adjust anytime. Next <strong>Run Scan</strong> uses this profile.</p>
+        <div class="target-dialog-fields">
+          <label>Min % / yr <input type="number" id="target-dialog-min" min="1" max="99" step="1" /></label>
+          <label>Max % / yr <input type="number" id="target-dialog-max" min="1" max="100" step="1" /></label>
+        </div>
+        <div class="target-dialog-actions">
+          <button type="button" class="btn-run sm" id="target-dialog-cancel">Cancel</button>
+          <button type="submit" class="btn-run sm">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div id="rerank-overlay" class="rerank-overlay" hidden>
+      <div class="rerank-overlay-card">
+        <p class="rerank-overlay-title">Re-ranking picks</p>
+        <p id="rerank-overlay-msg" class="rerank-overlay-msg">Applying your return target…</p>
+        <p class="muted rerank-overlay-hint">Global + India desks · about 1–2 min</p>
+      </div>
+    </div>
+
+    <div id="onboarding" class="onboarding-overlay" hidden>
+      <div class="onboarding-card">
+        <p class="hero-eyebrow">Welcome to {{ brand_name }}</p>
+        <h2>Your 60-second morning desk</h2>
+        <ol class="onboarding-steps">
+          <li><strong>Morning Brief</strong> — top picks across global, India, and crypto</li>
+          <li><strong>Watchlist</strong> — star symbols you care about (saved on this device)</li>
+          <li><strong>India Desk</strong> — NSE picks plus curated MF, bonds, and FD ideas</li>
+        </ol>
+        <p class="muted onboarding-note">Publisher research only — not financial advice. You self-direct all trades.</p>
+        <button type="button" id="onboarding-done" class="btn-run">Got it — open Morning Brief</button>
+      </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

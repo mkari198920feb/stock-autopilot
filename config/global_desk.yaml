@@ -1,0 +1,206 @@
+# APEX Global Intelligence — regional equity universes & crypto tiers (Yahoo Finance symbols)
+# Representative liquid names per region; expand over time.
+
+global_desk:
+  picks_per_board: 5
+  avoids_per_board: 2
+  global_top_n: 10
+  crypto_categories_scan: 12
+
+  markets:
+    us:
+      label: "🇺🇸 United States"
+      exchange: "NYSE / NASDAQ"
+      country: "United States"
+      theme: "Mag 7 + quality cyclicals"
+      top_risk: "Fed path & mega-cap concentration"
+      tickers:
+        - AAPL
+        - MSFT
+        - NVDA
+        - AMZN
+        - GOOGL
+        - META
+        - JPM
+        - UNH
+        - XOM
+        - V
+    canada:
+      label: "🇨🇦 Canada"
+      exchange: "TSX"
+      country: "Canada"
+      theme: "Energy & materials"
+      top_risk: "Oil price sensitivity"
+      tickers:
+        - SHOP.TO
+        - ENB.TO
+        - CNQ.TO
+        - TD.TO
+        - BMO.TO
+    brazil:
+      label: "🇧🇷 Brazil"
+      exchange: "B3"
+      country: "Brazil"
+      theme: "Commodities & financials"
+      top_risk: "BRL volatility"
+      tickers:
+        - VALE
+        - PBR
+        - ITUB
+        - BBDO
+    europe_uk:
+      label: "🇬🇧 United Kingdom"
+      exchange: "LSE"
+      country: "United Kingdom"
+      theme: "Mining & pharma"
+      top_risk: "GBP & gilt yields"
+      tickers:
+        - SHEL
+        - HSBC
+        - AZN.L
+        - ULVR.L
+        - BP.L
+    europe_core:
+      label: "🇪🇺 Europe Core"
+      exchange: "Xetra / Euronext"
+      country: "Europe"
+      theme: "Luxury & industrials"
+      top_risk: "ECB & energy costs"
+      tickers:
+        - ASML
+        - SAP
+        - NVO
+        - LVMUY
+        - MC.PA
+        - AIR.PA
+        - SIE.DE
+    japan:
+      label: "🇯🇵 Japan"
+      exchange: "TSE"
+      country: "Japan"
+      theme: "Governance reform / low PBR"
+      top_risk: "Yen & BOJ policy"
+      tickers:
+        - 7203.T
+        - 6758.T
+        - 9984.T
+        - 6861.T
+        - 8306.T
+    china_hk:
+      label: "🇨🇳 China / HK"
+      exchange: "HKEX / ADR"
+      country: "China"
+      theme: "Tech & EV — high regulatory risk"
+      top_risk: "Policy & ADR delisting"
+      tickers:
+        - BABA
+        - JD
+        - TCEHY
+        - 0700.HK
+        - 9988.HK
+    korea_taiwan:
+      label: "🇰🇷🇹🇼 Korea / Taiwan"
+      exchange: "KRX / TWSE"
+      country: "Asia Tech"
+      theme: "Semiconductors"
+      top_risk: "Taiwan Strait / Korea discount"
+      tickers:
+        - TSM
+        - 005930.KS
+        - 000660.KS
+    asean:
+      label: "🌏 ASEAN"
+      exchange: "SGX / IDX"
+      country: "Southeast Asia"
+      theme: "Consumer & banking"
+      top_risk: "USD strength vs EM FX"
+      tickers:
+        - D05.SI
+        - O39.SI
+        - BBCA.JK
+    australia:
+      label: "🇦🇺 Australia"
+      exchange: "ASX"
+      country: "Australia"
+      theme: "Mining & Big Four banks"
+      top_risk: "China demand for commodities"
+      tickers:
+        - BHP.AX
+        - CBA.AX
+        - CSL.AX
+        - WDS.AX
+    middle_east:
+      label: "🇸🇦 Middle East"
+      exchange: "Tadawul / ADX"
+      country: "GCC"
+      theme: "Energy & banking"
+      top_risk: "Oil price & Brent sensitivity"
+      tickers:
+        - 2222.SR
+        - 1180.SR
+        - EMAR.DU
+    africa:
+      label: "🇿🇦 Africa"
+      exchange: "JSE"
+      country: "South Africa"
+      theme: "Mining & Tencent proxy"
+      top_risk: "Load shedding / ZAR"
+      tickers:
+        - NPN.JO
+        - ANG.JO
+        - GFI.JO
+
+  crypto_tiers:
+    mega_cap:
+      label: "Mega Cap"
+      tier: 1
+      symbols:
+        - {ticker: BTC-USD, name: Bitcoin, coingecko_id: bitcoin}
+        - {ticker: ETH-USD, name: Ethereum, coingecko_id: ethereum}
+    layer1:
+      label: "Layer 1"
+      tier: 2
+      symbols:
+        - {ticker: SOL-USD, name: Solana, coingecko_id: solana}
+        - {ticker: ADA-USD, name: Cardano, coingecko_id: cardano}
+        - {ticker: AVAX-USD, name: Avalanche, coingecko_id: avalanche-2}
+        - {ticker: DOT-USD, name: Polkadot, coingecko_id: polkadot}
+        - {ticker: ATOM-USD, name: Cosmos, coingecko_id: cosmos}
+        - {ticker: NEAR-USD, name: NEAR, coingecko_id: near}
+        - {ticker: APT-USD, name: Aptos, coingecko_id: aptos}
+    layer2:
+      label: "Layer 2"
+      tier: 3
+      symbols:
+        - {ticker: POL-USD, name: Polygon, coingecko_id: matic-network}
+        - {ticker: ARB-USD, name: Arbitrum, coingecko_id: arbitrum}
+        - {ticker: OP-USD, name: Optimism, coingecko_id: optimism}
+    defi:
+      label: "DeFi"
+      tier: 4
+      symbols:
+        - {ticker: UNI-USD, name: Uniswap, coingecko_id: uniswap}
+        - {ticker: AAVE-USD, name: Aave, coingecko_id: aave}
+        - {ticker: LINK-USD, name: Chainlink, coingecko_id: chainlink}
+        - {ticker: MKR-USD, name: Maker, coingecko_id: maker}
+    ai_data:
+      label: "AI + Data"
+      tier: 5
+      symbols:
+        - {ticker: FET-USD, name: Fetch.ai, coingecko_id: fetch-ai}
+        - {ticker: RNDR-USD, name: Render, coingecko_id: render-token}
+        - {ticker: GRT-USD, name: The Graph, coingecko_id: the-graph}
+        - {ticker: TAO-USD, name: Bittensor, coingecko_id: bittensor}
+    infra:
+      label: "Infrastructure"
+      tier: 6
+      symbols:
+        - {ticker: FIL-USD, name: Filecoin, coingecko_id: filecoin}
+        - {ticker: AR-USD, name: Arweave, coingecko_id: arweave}
+    meme:
+      label: "Meme (Tactical)"
+      tier: 10
+      symbols:
+        - {ticker: DOGE-USD, name: Dogecoin, coingecko_id: dogecoin}
+        - {ticker: SHIB-USD, name: Shiba Inu, coingecko_id: shiba-inu}
+        - {ticker: PEPE-USD, name: PEPE, coingecko_id: pepe}

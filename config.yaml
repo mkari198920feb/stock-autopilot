@@ -1,0 +1,307 @@
+# Global liquid universe — expand as needed. Yahoo Finance symbols.
+regions:
+  north_america:
+    - AAPL
+    - MSFT
+    - GOOGL
+    - AMZN
+    - NVDA
+    - JPM
+    - UNH
+    - XOM
+    - JNJ
+    - V
+  europe:
+    - ASML
+    - SAP
+    - NVO
+    - SHEL
+    - HSBC
+  asia_pacific:
+    - TSM
+    - BABA
+    - RELIANCE.NS
+    - 7203.T
+  global_etfs:
+    - SPY
+    - QQQ
+    - EFA
+    - EEM
+    - VGK
+    - VWO
+
+macro_symbols:
+  sp500: "^GSPC"
+  nasdaq: "^IXIC"
+  vix: "^VIX"
+  us_10y: "^TNX"
+  gold: "GC=F"
+  oil: "CL=F"
+  usd_index: "DX-Y.NYB"
+  europe: "^STOXX50E"
+  japan: "^N225"
+  emerging: "EEM"
+
+agent:
+  daily_picks: 8
+  max_per_region: 3
+  max_per_sector: 2
+  min_avg_volume: 500000
+  lookback_days: 252
+
+# Your return goal — used for scoring & UI (override via dashboard or .env)
+investor_profile:
+  target_min_pct: 12
+  target_max_pct: 15
+  # Alternative: single target with ± band
+  # target_pct: 15
+  # band_width_pct: 3
+
+# Brand & research persona (UI + notes; email subject stays "Stock Autopilot Daily")
+apex:
+  brand_name: Uptick Alpha
+  brand_short: "↗"
+  brand_tagline: Global markets · Research autopilot
+  firm_name: Uptick Alpha Research Desk
+  role: Chief Investment Strategist · Equity Research
+  tagline: Institutional-grade equity research across every risk profile
+  powered_by: Stock Autopilot
+
+# APEX Crypto Desk — hourly BTC/ETH pulse (public data proxies)
+crypto_pulse:
+  enabled: true
+  assets:
+    - BTC
+    - ETH
+  refresh_cron: "5 * * * *"
+  weights:
+    on_chain: 0.25
+    derivatives: 0.25
+    macro: 0.20
+    sentiment: 0.15
+    microstructure: 0.10
+    session_timing: 0.05
+
+# APEX India Intelligence Desk — NSE/BSE equities + MF/Bonds/FD advisory
+india_desk:
+  enabled: true
+  daily_picks: 6
+  max_per_sector: 2
+  min_avg_volume: 100000
+  macro:
+    repo_rate: 6.50
+    rbi_stance: Neutral
+  nse_universe:
+    - RELIANCE.NS
+    - TCS.NS
+    - HDFCBANK.NS
+    - INFY.NS
+    - ICICIBANK.NS
+    - SBIN.NS
+    - ITC.NS
+    - LT.NS
+    - BHARTIARTL.NS
+    - KOTAKBANK.NS
+    - HINDUNILVR.NS
+    - AXISBANK.NS
+    - ASIANPAINT.NS
+    - MARUTI.NS
+    - NTPC.NS
+    - SUNPHARMA.NS
+    - TITAN.NS
+    - BAJFINANCE.NS
+    - WIPRO.NS
+    - ULTRACEMCO.NS
+    - POWERGRID.NS
+    - M&M.NS
+    - TATASTEEL.NS
+    - ADANIENT.NS
+    - COALINDIA.NS
+    - HCLTECH.NS
+    - TECHM.NS
+    - NESTLEIND.NS
+    - JSWSTEEL.NS
+    - INDUSINDBK.NS
+    - PERSISTENT.NS
+    - CHOLAFIN.NS
+    - DIXON.NS
+    - POLYCAB.NS
+    - VOLTAS.NS
+    - COFORGE.NS
+  bse_codes:
+    RELIANCE.NS: "500325"
+    TCS.NS: "532540"
+    HDFCBANK.NS: "500180"
+    INFY.NS: "500209"
+  mutual_funds:
+    - name: Parag Parikh Flexi Cap Fund — Direct Growth
+      amc: PPFAS
+      category: Flexi Cap
+      rating: "★★★★★ RECOMMENDED"
+      returns_1y: "22%"
+      returns_3y: "18% CAGR"
+      sharpe: "1.4"
+      expense_direct: "0.68%"
+      who: Moderate investors, 5+ year horizon, global flexi exposure
+      tax: "Equity MF — LTCG 12.5% above ₹1.25L (>1Y); STCG 20% (<1Y)"
+      sip: "₹5,000/month SIP — Direct Plan only"
+      desk_note: "Best-in-class global flexi with low overlap to Nifty 50 — core holding candidate."
+      risk_class: green
+    - name: Mirae Asset Large Cap Fund — Direct Growth
+      amc: Mirae Asset
+      category: Large Cap
+      rating: RECOMMENDED
+      returns_1y: "18%"
+      returns_3y: "16% CAGR"
+      sharpe: "1.1"
+      expense_direct: "0.52%"
+      who: Conservative core portfolio, Nifty 100 proxy
+      sip: "₹3,000/month minimum"
+      desk_note: "Consistent large-cap compounder — pair with mid-cap satellite."
+      risk_class: green
+    - name: Nippon India Small Cap Fund — Direct Growth
+      amc: Nippon India
+      category: Small Cap
+      rating: WATCH
+      returns_1y: "28%"
+      returns_3y: "24% CAGR"
+      sharpe: "0.9"
+      expense_direct: "0.78%"
+      who: Aggressive investors only — max 15% of equity book
+      desk_note: "High alpha but drawdown risk — size small, long horizon."
+      risk_class: yellow
+  bonds:
+    - name: 10-Year G-Sec (RBI Retail Direct)
+      issuer: Government of India
+      type: G-Sec
+      yield: "7.0% YTM (approx)"
+      tenor: "10 years"
+      rating: Sovereign
+      tax: "Interest per slab; LTCG 20% with indexation if sold after 3Y"
+      who: Conservative HNI, no default risk tolerance
+      desk_note: "Benchmark risk-free rate — anchor for fixed income allocation."
+      risk_class: green
+    - name: Sovereign Gold Bond (SGB) — latest tranche
+      issuer: RBI
+      type: SGB
+      yield: "2.5% + gold price"
+      tenor: "8 years (tax-free exit at maturity)"
+      rating: Sovereign
+      tax: "Capital gains tax-free if held to maturity — always flag this edge"
+      who: Gold allocation substitute — superior to physical gold/ETF for long hold
+      desk_note: "Most underappreciated instrument — tax-free gold exposure at maturity."
+      risk_class: green
+  fixed_deposits:
+    - name: SBI FD (General Public)
+      issuer: State Bank of India
+      type: Bank FD
+      rate: "6.5% p.a. (1–3Y indicative)"
+      tenor: "1–3 years"
+      rating: "DICGC insured up to ₹5L"
+      tax: "Taxable per slab; TDS @10% if interest > ₹40K/year"
+      who: Conservative parking — stay within ₹5L per bank for insurance
+      desk_note: "Safety first — do not exceed DICGC limit per bank."
+      risk_class: green
+    - name: AU Small Finance Bank FD
+      issuer: AU SFB
+      type: Small Finance Bank FD
+      rate: "8.0% p.a. (senior citizens higher)"
+      tenor: "2–3 years"
+      rating: "DICGC ₹5L cap — max ₹5L only"
+      tax: "Taxable per slab"
+      who: Yield pickup within insured limit only
+      desk_note: "Higher yield but cap at ₹5L per bank per the DICGC rule."
+      risk_class: yellow
+    - name: Bajaj Finance Corporate FD
+      issuer: Bajaj Finance
+      type: Corporate FD
+      rate: "7.5% p.a. (AAA rated)"
+      tenor: "3–5 years"
+      rating: AAA
+      tax: "Taxable per slab — not DICGC insured"
+      who: Sophisticated investors after bank FD quota filled
+      desk_note: "AAA corporate — still not bank-insured; assess concentration risk."
+      risk_class: yellow
+
+# APEX Global Intelligence — regional boards + tiered crypto universe
+global_desk:
+  enabled: true
+  markets_file: config/global_desk.yaml
+  refresh_cron: "30 6 * * *"
+
+scoring:
+  weights:
+    momentum: 0.25
+    valuation: 0.15
+    volatility_fit: 0.20
+    news_sentiment: 0.20
+    macro_alignment: 0.20
+
+notifications:
+  email:
+    enabled: true
+    subject_prefix: "Stock Autopilot Daily"
+    dashboard_url: ""  # optional: http://your-ip:8080 or ngrok URL
+    recipients:
+      - 63331961+mkari198920feb@users.noreply.github.com
+      - friend1@example.com
+      - friend2@example.com
+      - friend4@example.com
+      - friend3@example.com
+      - friend5@example.com
+
+# Publisher mode: illustrative model portfolios for friends (not personalized advice)
+model_portfolios:
+  benchmark: SPY
+  disclaimer: >
+    Research publisher only — illustrative model portfolios, not personalized advice.
+    Pick a model that fits your own risk tolerance. You trade in your own brokerage account.
+  models:
+    conservative:
+      label: Conservative
+      description: Lower volatility, quality and income tilt. Higher cash in Risk-Off regimes.
+      holdings: 6
+      max_single_weight: 0.20
+      base_cash_pct: 0.10
+      max_volatility: 0.22
+      max_per_sector: 2
+      max_per_region: 2
+      prefer_sectors:
+        - Healthcare
+        - Financial Services
+        - Consumer Defensive
+        - Utilities
+      prefer_symbols:
+        - SPY
+        - JNJ
+        - V
+        - UNH
+      scoring_bias:
+        volatility_fit: 0.30
+        momentum: 0.15
+        valuation: 0.20
+    balanced:
+      label: Balanced
+      description: Global core book — diversified regions, sectors, and themes.
+      holdings: 8
+      max_single_weight: 0.15
+      base_cash_pct: 0.05
+      max_per_sector: 2
+      max_per_region: 3
+    growth:
+      label: Growth
+      description: Momentum and innovation tilt. Higher volatility tolerance.
+      holdings: 6
+      max_single_weight: 0.18
+      base_cash_pct: 0.05
+      min_momentum_3m: 0.0
+      max_per_sector: 2
+      max_per_region: 3
+      prefer_sectors:
+        - Technology
+        - Communication Services
+        - Consumer Cyclical
+      scoring_bias:
+        momentum: 0.35
+        valuation: 0.10
+        volatility_fit: 0.15
