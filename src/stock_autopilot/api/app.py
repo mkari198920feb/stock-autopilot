@@ -8,6 +8,7 @@ from fastapi.templating import Jinja2Templates
 from stock_autopilot.agent.crypto_pulse import run_crypto_pulse
 from stock_autopilot.agent.global_desk import run_global_desk
 from stock_autopilot.agent.india_desk import run_india_desk
+from stock_autopilot.agent.market_pulse import run_market_pulse
 from stock_autopilot.agent.orchestrator import run_autopilot
 from stock_autopilot.analysis.crypto_research import build_crypto_research_note
 from stock_autopilot.analysis.desk_stats import get_desk_activity
@@ -19,6 +20,7 @@ from stock_autopilot.db import (
     get_latest_crypto_pulse_dict,
     get_latest_global_desk_dict,
     get_latest_india_desk_dict,
+    get_latest_market_pulse_dict,
     get_latest_run,
     init_db,
     list_runs,
@@ -68,6 +70,7 @@ def _dashboard_context(latest: dict | None, runs: list[dict]) -> dict:
         "crypto_pulse": get_latest_crypto_pulse_dict(),
         "india_desk": get_latest_india_desk_dict(),
         "global_desk": get_latest_global_desk_dict(),
+        "market_pulse": get_latest_market_pulse_dict(),
     }
     india = ctx["india_desk"]
     crypto = ctx["crypto_pulse"]
@@ -97,6 +100,10 @@ def _dashboard_context(latest: dict | None, runs: list[dict]) -> dict:
     )
     ctx["fresh_crypto"] = freshness_meta(
         crypto["captured_at"] if crypto else None, "crypto"
+    )
+    mp = ctx["market_pulse"]
+    ctx["fresh_pulse"] = freshness_meta(
+        mp["captured_at"] if mp else None, "pulse"
     )
     ctx["fresh_advisory"] = freshness_meta(
         india["captured_at"] if india else None, "advisory"
@@ -311,6 +318,38 @@ async def api_crypto_research(symbol: str):
     if not note:
         return JSONResponse({"status": "not_found", "symbol": symbol.upper()}, status_code=404)
     return note
+
+
+@app.get("/api/market-pulse")
+async def api_market_pulse():
+    data = get_latest_market_pulse_dict()
+    if not data:
+        return JSONResponse({"status": "no_data"}, status_code=404)
+    return data
+
+
+@app.post("/api/market-pulse/refresh")
+async def api_market_pulse_refresh():
+    try:
+        snap = run_market_pulse()
+        return snap.model_dump(mode="json")
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.get("/api/deep-intelligence/{symbol}")
+async def api_deep_intelligence(symbol: str, context: str = ""):
+    from stock_autopilot.analysis.deep_intelligence import build_deep_brief
+
+    brief = build_deep_brief(symbol, trigger_context=context)
+    if not brief:
+        return JSONResponse({"status": "not_found", "symbol": symbol.upper()}, status_code=404)
+    return brief.model_dump(mode="json")
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return HTMLResponse(status_code=204)
 
 
 @app.get("/health")

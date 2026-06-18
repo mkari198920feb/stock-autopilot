@@ -341,8 +341,128 @@ class GlobalDeskSnapshot(BaseModel):
     captured_at: datetime
     opening_statement: str
     signal_stack: dict = Field(default_factory=dict)
-    macro_ticker: list[dict] = Field(default_factory=list)
+    macro_ticker: list[dict] = Field(default_factory=dict)
     regional_boards: list[RegionalBoard] = Field(default_factory=list)
     crypto_board: list[CryptoCategoryPick] = Field(default_factory=list)
     global_top_picks: list[RegionalPickRow] = Field(default_factory=list)
     disclaimer: str = "Research publisher only — not financial advice."
+
+
+class MoverRow(BaseModel):
+    rank: int
+    symbol: str
+    name: str
+    cmp: float
+    change_abs: float
+    change_pct: float
+    volume_vs_avg_pct: float = 100.0
+    sector: str = "—"
+    reason: str = ""
+    contrarian_score: int | None = None
+
+
+class IndexQuote(BaseModel):
+    label: str
+    symbol: str
+    value: float
+    change_abs: float
+    change_pct: float
+    direction: str = "flat"
+
+
+class SectorHeatCell(BaseModel):
+    sector: str
+    change_pct: float
+    reason: str = ""
+
+
+class MarketPulseBoard(BaseModel):
+    market_id: str
+    label: str
+    flag: str = "🌍"
+    timezone: str = "UTC"
+    session: str = "open"
+    captured_at: datetime
+    indices: list[IndexQuote] = Field(default_factory=list)
+    top_gainers: list[MoverRow] = Field(default_factory=list)
+    top_losers: list[MoverRow] = Field(default_factory=list)
+    week_52_highs: list[MoverRow] = Field(default_factory=list)
+    week_52_lows: list[MoverRow] = Field(default_factory=list)
+    all_time_highs: list[MoverRow] = Field(default_factory=list)
+    upper_circuits: list[MoverRow] = Field(default_factory=list)
+    lower_circuits: list[MoverRow] = Field(default_factory=list)
+    volume_leaders: list[MoverRow] = Field(default_factory=list)
+    sector_heatmap: list[SectorHeatCell] = Field(default_factory=list)
+    macro_pulse: dict = Field(default_factory=dict)
+    tomorrow_setup: str = ""
+    breadth: dict = Field(default_factory=dict)
+
+
+class CryptoMarketPulseBoard(BaseModel):
+    captured_at: datetime
+    total_market_cap_usd: float = 0.0
+    market_cap_change_24h_pct: float = 0.0
+    btc_dominance_pct: float = 0.0
+    eth_dominance_pct: float = 0.0
+    fear_greed_label: str = "Neutral"
+    top_by_mcap: list[dict] = Field(default_factory=list)
+    top_gainers_24h: list[dict] = Field(default_factory=list)
+    top_losers_24h: list[dict] = Field(default_factory=list)
+    week_52_highs: list[dict] = Field(default_factory=list)
+    week_52_lows: list[dict] = Field(default_factory=list)
+    ath_alerts: list[dict] = Field(default_factory=list)
+    volume_leaders: list[dict] = Field(default_factory=list)
+    category_performance: list[dict] = Field(default_factory=list)
+    tomorrow_setup: str = ""
+
+
+class MarketPulseSnapshot(BaseModel):
+    pulse_id: str
+    captured_at: datetime
+    session_label: str
+    opening_statement: str
+    boards: list[MarketPulseBoard] = Field(default_factory=list)
+    crypto: CryptoMarketPulseBoard | None = None
+    india_eod_breadth: dict = Field(default_factory=dict)
+
+
+class DeepStockBrief(BaseModel):
+    symbol: str
+    name: str
+    exchange: str
+    sector: str
+    industry: str
+    currency: str
+    cmp: float
+    change_pct: float
+    change_abs: float
+    week_52_high: float
+    week_52_low: float
+    week_52_high_dist_pct: float
+    week_52_low_dist_pct: float
+    market_cap: float | None = None
+    cap_segment: str = "—"
+    rating: str
+    target_price: float
+    upside_pct: float
+    risk_tier: int
+    conviction: str
+    horizon: str
+    verdict: str
+    why_recommending: str
+    top_reasons: list[str] = Field(default_factory=list)
+    top_risks: list[str] = Field(default_factory=list)
+    business_snapshot: str = ""
+    pillars: dict = Field(default_factory=dict)
+    financials_glance: dict = Field(default_factory=dict)
+    valuation: dict = Field(default_factory=dict)
+    technical: dict = Field(default_factory=dict)
+    ownership: dict = Field(default_factory=dict)
+    catalysts: list[dict] = Field(default_factory=list)
+    peer_comparison: dict = Field(default_factory=dict)
+    position_guide: dict = Field(default_factory=dict)
+    analyst_consensus: dict = Field(default_factory=dict)
+    desk_verdict: str = ""
+    card_text: str = ""
+    generated_at: datetime
+    trigger_context: str = ""

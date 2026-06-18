@@ -4,6 +4,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from stock_autopilot.agent.crypto_pulse import run_crypto_pulse
+from stock_autopilot.agent.market_pulse import run_market_pulse
 from stock_autopilot.agent.orchestrator import run_autopilot
 from stock_autopilot.config import settings
 from stock_autopilot.db import init_db
@@ -88,6 +89,13 @@ def start_scheduler() -> BackgroundScheduler:
         id="hourly_resolve_outcomes",
         replace_existing=True,
     )
+    if cfg.get("apex_deep", {}).get("enabled", True):
+        _scheduler.add_job(
+            run_market_pulse,
+            CronTrigger(minute="10,40"),
+            id="market_pulse_board",
+            replace_existing=True,
+        )
     _scheduler.start()
 
     try:
@@ -102,6 +110,12 @@ def start_scheduler() -> BackgroundScheduler:
 
     try:
         _maybe_run_global_desk()
+    except Exception:
+        pass
+
+    try:
+        if cfg.get("apex_deep", {}).get("enabled", True):
+            run_market_pulse()
     except Exception:
         pass
 

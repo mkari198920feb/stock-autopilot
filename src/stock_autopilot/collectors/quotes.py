@@ -4,6 +4,7 @@ import yfinance as yf
 
 from stock_autopilot.collectors.cache import cache_get_json, cache_set_json
 from stock_autopilot.collectors.coingecko import fetch_simple_prices, symbol_to_id
+from stock_autopilot.collectors.symbol_normalize import to_yahoo_symbol
 
 
 def _from_fast_info(ticker: yf.Ticker) -> float | None:
@@ -34,7 +35,7 @@ def _from_history(ticker: yf.Ticker) -> float | None:
 
 
 def fetch_quote(symbol: str) -> float | None:
-    sym = symbol.strip()
+    sym = to_yahoo_symbol(symbol.strip())
     if not sym:
         return None
 
@@ -69,15 +70,18 @@ def batch_fetch_quotes(symbols: list[str], ttl: int = 90) -> dict[str, float]:
     out: dict[str, float] = {}
     crypto_ids: dict[str, str] = {}
     yahoo_syms: list[str] = []
+    sym_lookup: dict[str, str] = {}
 
     for sym in unique:
-        asset = sym.replace("-USD", "")
-        if sym in ("BTC", "ETH") or sym.endswith("-USD"):
+        ysym = to_yahoo_symbol(sym)
+        sym_lookup[ysym] = sym
+        asset = ysym.replace("-USD", "")
+        if ysym in ("BTC", "ETH") or ysym.endswith("-USD"):
             cid = symbol_to_id(asset)
             if cid:
                 crypto_ids[sym] = cid
                 continue
-        yahoo_syms.append(sym)
+        yahoo_syms.append(ysym)
 
     if crypto_ids:
         prices = fetch_simple_prices(list(set(crypto_ids.values())), ttl=ttl)
@@ -101,12 +105,12 @@ def batch_fetch_quotes(symbols: list[str], ttl: int = 90) -> dict[str, float]:
                     t = yf.Ticker(sym)
                 p = _from_fast_info(t) or _from_history(t)
                 if p:
-                    out[sym] = p
+                    out[sym_lookup.get(sym, sym)] = p
         except Exception:
             for sym in yahoo_syms:
-                p = fetch_quote(sym)
+                p = fetch_quote(sym_lookup.get(sym, sym))
                 if p:
-                    out[sym] = p
+                    out[sym_lookup.get(sym, sym)] = p
 
     if out:
         cache_set_json(cache_key, out, ttl)

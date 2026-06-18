@@ -130,7 +130,7 @@ def record_india_picks(snapshot: IndiaDeskSnapshot) -> None:
             {
                 "source": "india_desk",
                 "desk_id": snapshot.desk_id,
-                "symbol": eq.nse,
+                "symbol": eq.symbol,
                 "name": eq.name,
                 "captured_at": snapshot.captured_at.isoformat(),
                 "entry_price": eq.cmp,

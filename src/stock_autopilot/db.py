@@ -12,6 +12,7 @@ from stock_autopilot.models.schemas import (
     GlobalDeskSnapshot,
     IndiaDeskSnapshot,
     MacroSnapshot,
+    MarketPulseSnapshot,
     ModelPortfolio,
     StockPick,
 )
@@ -71,6 +72,12 @@ def init_db() -> None:
                 payload_json TEXT NOT NULL
             );
             CREATE INDEX IF NOT EXISTS idx_global_desk_time ON global_desk(captured_at);
+            CREATE TABLE IF NOT EXISTS market_pulse (
+                pulse_id TEXT PRIMARY KEY,
+                captured_at TEXT NOT NULL,
+                payload_json TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_market_pulse_time ON market_pulse(captured_at);
             CREATE TABLE IF NOT EXISTS api_cache (
                 cache_key TEXT PRIMARY KEY,
                 payload_json TEXT NOT NULL,
@@ -297,6 +304,32 @@ def get_latest_global_desk() -> GlobalDeskSnapshot | None:
 
 def get_latest_global_desk_dict() -> dict | None:
     snap = get_latest_global_desk()
+    return snap.model_dump(mode="json") if snap else None
+
+
+def save_market_pulse(snapshot: MarketPulseSnapshot) -> None:
+    with get_conn() as conn:
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO market_pulse (pulse_id, captured_at, payload_json)
+            VALUES (?, ?, ?)
+            """,
+            (snapshot.pulse_id, snapshot.captured_at.isoformat(), snapshot.model_dump_json()),
+        )
+
+
+def get_latest_market_pulse() -> MarketPulseSnapshot | None:
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT payload_json FROM market_pulse ORDER BY captured_at DESC LIMIT 1"
+        ).fetchone()
+        if not row:
+            return None
+        return MarketPulseSnapshot(**json.loads(row["payload_json"]))
+
+
+def get_latest_market_pulse_dict() -> dict | None:
+    snap = get_latest_market_pulse()
     return snap.model_dump(mode="json") if snap else None
 
 

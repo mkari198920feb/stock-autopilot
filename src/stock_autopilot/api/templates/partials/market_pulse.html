@@ -1,0 +1,168 @@
+      <section id="market-pulse" class="market-pulse-section">
+        <div class="section-banner pulse-banner">
+          <div>
+            <p class="hero-eyebrow">APEX Deep Intelligence · Layer 2</p>
+            <h2>Live Market Pulse Board</h2>
+            <p class="section-sub">
+              {% if market_pulse %}{{ market_pulse.opening_statement[:200] }}…{% else %}
+              Real-time movers, 52-week extremes, circuits, and sector heatmaps across all markets.
+              {% endif %}
+            </p>
+          </div>
+          <div class="section-actions">
+            <button type="button" id="refresh-market-pulse" class="btn-run sm">↻ Refresh Pulse</button>
+            <span class="freshness-item fresh-{{ fresh_pulse.badge_class }}">Pulse · {{ fresh_pulse.label }}</span>
+          </div>
+        </div>
+
+        {% if market_pulse and market_pulse.india_eod_breadth %}
+        <div class="pulse-breadth-bar">
+          <span>Advances <strong>{{ market_pulse.india_eod_breadth.advances }}</strong></span>
+          <span>Declines <strong>{{ market_pulse.india_eod_breadth.declines }}</strong></span>
+          <span>A/D <strong>{{ market_pulse.india_eod_breadth.ad_ratio }}</strong></span>
+          <span>52W Highs <strong>{{ market_pulse.india_eod_breadth.new_52w_highs }}</strong></span>
+          <span>52W Lows <strong>{{ market_pulse.india_eod_breadth.new_52w_lows }}</strong></span>
+        </div>
+        {% endif %}
+
+        {% if not market_pulse %}
+        <div class="pulse-empty">
+          <p>No pulse data yet. Click <strong>Refresh Pulse</strong> — first scan takes 1–2 minutes.</p>
+        </div>
+        {% else %}
+
+        {% if market_pulse.crypto %}
+        <article class="pulse-board crypto-pulse-board">
+          <header class="pulse-board-head">
+            <h3>₿ Crypto Market Pulse</h3>
+            <span class="pulse-meta">MCap ${{ "{:,.0f}".format(market_pulse.crypto.total_market_cap_usd / 1e9) }}B · BTC dom {{ market_pulse.crypto.btc_dominance_pct }}% · {{ market_pulse.crypto.fear_greed_label }}</span>
+          </header>
+          <div class="pulse-grid-3">
+            <div class="pulse-panel">
+              <h4>Top gainers 24H</h4>
+              <ul class="pulse-mover-list">
+                {% for row in market_pulse.crypto.top_gainers_24h %}
+                <li><button type="button" class="deep-trigger" data-deep-symbol="{{ row.token }}-USD" data-deep-context="crypto">{{ row.token }} +{{ "{:.1f}".format(row.chg_24h or 0) }}%</button></li>
+                {% endfor %}
+              </ul>
+            </div>
+            <div class="pulse-panel">
+              <h4>Top losers 24H</h4>
+              <ul class="pulse-mover-list">
+                {% for row in market_pulse.crypto.top_losers_24h %}
+                <li><button type="button" class="deep-trigger" data-deep-symbol="{{ row.token }}-USD" data-deep-context="crypto">{{ row.token }} {{ "{:.1f}".format(row.chg_24h or 0) }}%</button></li>
+                {% endfor %}
+              </ul>
+            </div>
+            <div class="pulse-panel">
+              <h4>Category performance</h4>
+              <ul class="pulse-mover-list">
+                {% for cat in market_pulse.crypto.category_performance %}
+                <li>{{ cat.category }} · {{ "{:+.1f}".format(cat.change_pct) }}%</li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </article>
+        {% endif %}
+
+        {% for board in market_pulse.boards %}
+        <article class="pulse-board" id="pulse-{{ board.market_id }}">
+          <header class="pulse-board-head">
+            <h3>{{ board.label }}</h3>
+            <span class="pulse-meta">{{ board.session|replace('_', ' ') }} · {{ board.captured_at[:16] }} UTC</span>
+          </header>
+
+          {% if board.indices %}
+          <div class="pulse-indices">
+            {% for idx in board.indices %}
+            <div class="pulse-index-chip">
+              <span class="pi-label">{{ idx.label }}</span>
+              <span class="pi-val">{{ "{:,.2f}".format(idx.value) }}</span>
+              <span class="pi-chg {% if idx.direction == 'up' %}pct-up{% elif idx.direction == 'down' %}pct-down{% endif %}">{{ "{:+.2f}".format(idx.change_pct) }}%</span>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <div class="pulse-grid-3">
+            <div class="pulse-panel">
+              <h4>Top gainers</h4>
+              <table class="pulse-table">
+                <thead><tr><th>#</th><th>Symbol</th><th>%</th><th>Vol</th></tr></thead>
+                <tbody>
+                  {% for m in board.top_gainers %}
+                  <tr>
+                    <td>{{ m.rank }}</td>
+                    <td><button type="button" class="deep-trigger link-btn" data-deep-symbol="{{ m.symbol }}" data-deep-context="gainer">{{ m.symbol }}</button></td>
+                    <td class="pct-up">{{ "{:+.1f}".format(m.change_pct) }}%</td>
+                    <td>{{ "{:.0f}".format(m.volume_vs_avg_pct) }}%</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <div class="pulse-panel">
+              <h4>Top losers</h4>
+              <table class="pulse-table">
+                <thead><tr><th>#</th><th>Symbol</th><th>%</th><th>Vol</th></tr></thead>
+                <tbody>
+                  {% for m in board.top_losers %}
+                  <tr>
+                    <td>{{ m.rank }}</td>
+                    <td><button type="button" class="deep-trigger link-btn" data-deep-symbol="{{ m.symbol }}" data-deep-context="loser">{{ m.symbol }}</button></td>
+                    <td class="pct-down">{{ "{:+.1f}".format(m.change_pct) }}%</td>
+                    <td>{{ "{:.0f}".format(m.volume_vs_avg_pct) }}%</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <div class="pulse-panel">
+              <h4>Sector heatmap</h4>
+              <ul class="sector-heat-list">
+                {% for s in board.sector_heatmap %}
+                <li class="{% if s.change_pct > 0.3 %}heat-up{% elif s.change_pct < -0.3 %}heat-down{% else %}heat-flat{% endif %}">
+                  <span>{{ s.sector }}</span>
+                  <strong>{{ "{:+.1f}".format(s.change_pct) }}%</strong>
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+
+          <div class="pulse-grid-2">
+            <div class="pulse-panel">
+              <h4>52-week highs today ({{ board.week_52_highs|length }})</h4>
+              <ul class="pulse-mover-list">
+                {% for m in board.week_52_highs[:6] %}
+                <li><button type="button" class="deep-trigger link-btn" data-deep-symbol="{{ m.symbol }}" data-deep-context="52w_high">{{ m.symbol }}</button> · {{ m.reason[:50] }}</li>
+                {% else %}<li class="muted">None in scanned universe</li>{% endfor %}
+              </ul>
+            </div>
+            <div class="pulse-panel">
+              <h4>52-week lows · contrarian score ({{ board.week_52_lows|length }})</h4>
+              <ul class="pulse-mover-list">
+                {% for m in board.week_52_lows[:6] %}
+                <li><button type="button" class="deep-trigger link-btn" data-deep-symbol="{{ m.symbol }}" data-deep-context="52w_low">{{ m.symbol }}</button> · score {{ m.contrarian_score or '—' }}/10</li>
+                {% else %}<li class="muted">None in scanned universe</li>{% endfor %}
+              </ul>
+            </div>
+          </div>
+
+          {% if board.upper_circuits or board.lower_circuits %}
+          <div class="pulse-circuits">
+            {% if board.upper_circuits %}
+            <span class="circuit-up">UC: {% for m in board.upper_circuits[:5] %}<button type="button" class="deep-trigger link-btn" data-deep-symbol="{{ m.symbol }}">{{ m.symbol }}</button>{% if not loop.last %}, {% endif %}{% endfor %}</span>
+            {% endif %}
+            {% if board.lower_circuits %}
+            <span class="circuit-down">LC: {% for m in board.lower_circuits[:5] %}<button type="button" class="deep-trigger link-btn" data-deep-symbol="{{ m.symbol }}">{{ m.symbol }}</button>{% if not loop.last %}, {% endif %}{% endfor %}</span>
+            {% endif %}
+          </div>
+          {% endif %}
+
+          <p class="pulse-setup"><strong>Tomorrow's setup:</strong> {{ board.tomorrow_setup }}</p>
+        </article>
+        {% endfor %}
+        {% endif %}
+      </section>

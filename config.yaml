@@ -67,6 +67,12 @@ apex:
   tagline: Institutional-grade equity research across every risk profile
   powered_by: Stock Autopilot
 
+# APEX Deep Intelligence — stock detail engine + live market pulse boards
+apex_deep:
+  enabled: true
+  pulse_refresh_cron: "10,40 * * * *"
+  auto_deep_on_pick_click: true
+
 # APEX Crypto Desk — hourly BTC/ETH pulse (public data proxies)
 crypto_pulse:
   enabled: true

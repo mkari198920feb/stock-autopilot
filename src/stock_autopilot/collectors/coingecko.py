@@ -52,6 +52,35 @@ def _fetch_url(url: str, timeout: int = 12) -> Any:
         return json.loads(resp.read().decode())
 
 
+def market_change_24h(row: dict) -> float | None:
+    for key in ("price_change_percentage_24h_in_currency", "price_change_percentage_24h"):
+        val = row.get(key)
+        if val is not None:
+            return float(val)
+    return None
+
+
+def market_change_7d(row: dict) -> float | None:
+    for key in ("price_change_percentage_7d_in_currency", "price_change_percentage_7d"):
+        val = row.get(key)
+        if val is not None:
+            return float(val)
+    return None
+
+
+def row_to_metrics(m: dict) -> dict:
+    return {
+        "token": (m.get("symbol") or "").upper(),
+        "name": m.get("name"),
+        "price": m.get("current_price"),
+        "chg_24h": market_change_24h(m),
+        "chg_7d": market_change_7d(m),
+        "mcap": m.get("market_cap"),
+        "rank": m.get("market_cap_rank"),
+        "volume": m.get("total_volume"),
+    }
+
+
 def fetch_simple_prices(coin_ids: list[str], ttl: int = 300) -> dict[str, dict]:
     if not coin_ids:
         return {}
@@ -78,7 +107,7 @@ def fetch_market_batch(coin_ids: list[str], ttl: int = 600) -> list[dict]:
         return []
     key = "cg:markets:" + ",".join(sorted(set(coin_ids)))
     hit = cache_get_json(key)
-    if isinstance(hit, list):
+    if isinstance(hit, list) and hit:
         return hit
 
     ids = ",".join(sorted(set(coin_ids)))
@@ -88,7 +117,29 @@ def fetch_market_batch(coin_ids: list[str], ttl: int = 600) -> list[dict]:
     )
     try:
         data = _fetch_url(url)
-        if isinstance(data, list):
+        if isinstance(data, list) and data:
+            cache_set_json(key, data, ttl)
+            return data
+    except Exception:
+        pass
+    return []
+
+
+def fetch_top_markets(per_page: int = 100, page: int = 1, ttl: int = 300) -> list[dict]:
+    """Top coins by market cap — best source for crypto pulse gainers/losers."""
+    key = f"cg:markets:top:{per_page}:{page}"
+    hit = cache_get_json(key)
+    if isinstance(hit, list) and hit:
+        return hit
+
+    url = (
+        f"{BASE}/coins/markets?vs_currency=usd&order=market_cap_desc"
+        f"&per_page={per_page}&page={page}&sparkline=false"
+        "&price_change_percentage=24h,7d,30d"
+    )
+    try:
+        data = _fetch_url(url)
+        if isinstance(data, list) and data:
             cache_set_json(key, data, ttl)
             return data
     except Exception:
@@ -118,11 +169,11 @@ def fetch_coin_detail(coin_id: str, ttl: int = 3600) -> dict | None:
 def fetch_global_crypto_stats(ttl: int = 600) -> dict:
     key = "cg:global"
     hit = cache_get_json(key)
-    if isinstance(hit, dict):
+    if isinstance(hit, dict) and hit.get("data"):
         return hit
     try:
         data = _fetch_url(f"{BASE}/global")
-        if isinstance(data, dict):
+        if isinstance(data, dict) and data.get("data"):
             cache_set_json(key, data, ttl)
             return data
     except Exception:
@@ -158,8 +209,8 @@ def metrics_for_symbol(symbol: str, entry: dict | None = None) -> dict | None:
             m = markets[0]
             return {
                 "price": float(m.get("current_price") or 0),
-                "chg_24h": m.get("price_change_percentage_24h_in_currency"),
-                "chg_7d": m.get("price_change_percentage_7d_in_currency"),
+                "chg_24h": market_change_24h(m),
+                "chg_7d": market_change_7d(m),
                 "market_cap": m.get("market_cap"),
                 "rank": m.get("market_cap_rank"),
                 "coin_id": coin_id,

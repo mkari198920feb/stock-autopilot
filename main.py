@@ -273,6 +273,29 @@ def cmd_global_desk(_: argparse.Namespace) -> None:
     print(f"\n{snap.disclaimer}")
 
 
+def cmd_market_pulse(_: argparse.Namespace) -> None:
+    from stock_autopilot.agent.market_pulse import run_market_pulse
+
+    snap = run_market_pulse()
+    print(f"\nMarket Pulse — {snap.captured_at.strftime('%Y-%m-%d %H:%M UTC')}")
+    print(f"Session: {snap.session_label} · {len(snap.boards)} regional boards")
+    if snap.crypto:
+        print(f"Crypto MCap: ${snap.crypto.total_market_cap_usd/1e9:.0f}B · {snap.crypto.fear_greed_label}")
+    india = next((b for b in snap.boards if b.market_id == "india"), None)
+    if india:
+        print(f"India: {len(india.top_gainers)} gainers · {len(india.week_52_highs)} at 52W high")
+
+
+def cmd_deep_brief(args: argparse.Namespace) -> None:
+    from stock_autopilot.analysis.deep_intelligence import build_deep_brief
+
+    brief = build_deep_brief(args.symbol, trigger_context=args.context or "")
+    if not brief:
+        print(f"No data for {args.symbol}")
+        sys.exit(1)
+    print(brief.card_text)
+
+
 def cmd_crypto_pulse(_: argparse.Namespace) -> None:
     from stock_autopilot.agent.crypto_pulse import run_crypto_pulse
 
@@ -304,6 +327,13 @@ def main() -> None:
     sub.add_parser("india-desk", help="Run APEX India equities + MF/Bonds/FD desk").set_defaults(func=cmd_india_desk)
 
     sub.add_parser("global-desk", help="Run global regional boards + tiered crypto scan").set_defaults(func=cmd_global_desk)
+
+    sub.add_parser("market-pulse", help="Run live market pulse boards (all regions + crypto)").set_defaults(func=cmd_market_pulse)
+
+    p_deep = sub.add_parser("deep-brief", help="Print APEX deep intelligence card for a symbol")
+    p_deep.add_argument("symbol", help="Ticker e.g. AAPL or RELIANCE.NS")
+    p_deep.add_argument("--context", default="", help="Trigger context: 52w_high, 52w_low, gainer")
+    p_deep.set_defaults(func=cmd_deep_brief)
 
     vt = sub.add_parser("validate-tickers", help="Validate Yahoo/CoinGecko symbols in config")
     vt.add_argument("--source", default="all", choices=["all", "regions", "india", "global", "crypto"])

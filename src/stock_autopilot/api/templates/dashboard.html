@@ -122,6 +122,7 @@
 
     <nav class="mc-tabs">
       <a href="#morning-brief" class="mc-tab active">Morning Brief</a>
+      <a href="#market-pulse" class="mc-tab">Market Pulse</a>
       <a href="#picks" class="mc-tab">Global</a>
       <a href="#india" class="mc-tab">India</a>
       <a href="#crypto" class="mc-tab">Crypto</a>
@@ -472,7 +473,7 @@
             <ul class="day-pick-list">
               {% for eq in india_picks_today %}
               {% if loop.index <= 3 %}
-              <li class="day-pick-item" data-symbol="{{ eq.nse }}">
+              <li class="day-pick-item" data-symbol="{{ eq.symbol }}">
                 <div class="day-pick-rank">{{ loop.index }}</div>
                 <div class="day-pick-body">
                   <div class="day-pick-title">
@@ -964,6 +965,8 @@
         </article>
       </section>
 
+      {% include "partials/market_pulse.html" %}
+
       <!-- Picks -->
       <section class="picks-section" id="picks">
         {% if global_desk %}
@@ -1411,6 +1414,18 @@
           <button type="submit" class="btn-run sm">Save</button>
         </div>
       </form>
+    </dialog>
+
+    <dialog id="deep-intelligence-dialog" class="deep-intelligence-dialog">
+      <div class="deep-dialog-head">
+        <div>
+          <p class="hero-eyebrow">APEX Deep Intelligence · Layer 1</p>
+          <h3 id="deep-dialog-title">Full Stock Brief</h3>
+        </div>
+        <button type="button" class="deep-dialog-close" id="deep-dialog-close" aria-label="Close">×</button>
+      </div>
+      <div id="deep-dialog-loading" class="deep-dialog-loading">Building 8-pillar institutional brief…</div>
+      <div id="deep-dialog-body" class="deep-dialog-body" hidden></div>
     </dialog>
 
     <div id="rerank-overlay" class="rerank-overlay" hidden>

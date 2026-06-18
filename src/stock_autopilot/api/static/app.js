@@ -65,21 +65,26 @@
     });
   });
 
-  // Run agent button
+  // Run agent button (full scan — may take 2–5 min)
   const btn = document.getElementById("run-now");
   btn?.addEventListener("click", async () => {
     btn.disabled = true;
     btn.classList.add("loading");
-    btn.querySelector(".btn-text").textContent = "Analyzing…";
+    const label = btn.querySelector(".btn-text");
+    if (label) label.textContent = "Analyzing…";
     try {
       const res = await fetch("/api/run-now", { method: "POST" });
-      if (!res.ok) throw new Error("Run failed");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || err.detail || "Run failed");
+      }
+      if (label) label.textContent = "Done — reloading…";
       location.reload();
-    } catch {
-      alert("Agent run failed. Check terminal logs.");
+    } catch (err) {
+      alert(err.message || "Agent run failed. Check terminal logs.");
       btn.disabled = false;
       btn.classList.remove("loading");
-      btn.querySelector(".btn-text").textContent = "Run Scan";
+      if (label) label.textContent = "Run Scan";
     }
   });
 
@@ -333,6 +338,109 @@
     window.print();
   });
 
+  // Market Pulse refresh
+  document.getElementById("refresh-market-pulse")?.addEventListener("click", async () => {
+    const btn = document.getElementById("refresh-market-pulse");
+    if (!btn) return;
+    btn.disabled = true;
+    btn.textContent = "Scanning markets…";
+    try {
+      const res = await fetch("/api/market-pulse/refresh", { method: "POST" });
+      if (!res.ok) throw new Error("Pulse refresh failed");
+      location.reload();
+    } catch {
+      alert("Market pulse refresh failed — check terminal logs.");
+      btn.disabled = false;
+      btn.textContent = "↻ Refresh Pulse";
+    }
+  });
+
+  // Deep Intelligence — any stock click
+  const deepDlg = document.getElementById("deep-intelligence-dialog");
+  const deepBody = document.getElementById("deep-dialog-body");
+  const deepLoad = document.getElementById("deep-dialog-loading");
+  const deepTitle = document.getElementById("deep-dialog-title");
+
+  function renderDeepBrief(data) {
+    if (!deepBody) return;
+    const vClass = data.verdict === "BUY" ? "" : data.verdict === "AVOID" ? "avoid" : "watch";
+    const cur = data.currency === "INR" ? "₹" : "$";
+    deepBody.innerHTML = `
+      <div class="deep-section">
+        <span class="deep-verdict ${vClass}">${data.verdict}</span>
+        <span class="deep-verdict watch">${data.rating}</span>
+        <span class="deep-verdict watch">Tier ${data.risk_tier} · ${data.conviction}</span>
+      </div>
+      <div class="deep-kv-grid">
+        <div class="deep-kv"><span>CMP</span><strong>${cur}${Number(data.cmp).toLocaleString()}</strong></div>
+        <div class="deep-kv"><span>Today</span><strong>${data.change_pct > 0 ? "+" : ""}${data.change_pct}%</strong></div>
+        <div class="deep-kv"><span>Target</span><strong>${cur}${Number(data.target_price).toLocaleString()}</strong></div>
+        <div class="deep-kv"><span>Upside</span><strong>+${data.upside_pct}%</strong></div>
+        <div class="deep-kv"><span>52W High</span><strong>${cur}${Number(data.week_52_high).toLocaleString()}</strong></div>
+        <div class="deep-kv"><span>52W Low</span><strong>${cur}${Number(data.week_52_low).toLocaleString()}</strong></div>
+      </div>
+      <div class="deep-section">
+        <h4>★ Why we are recommending this</h4>
+        <p>${data.why_recommending}</p>
+        <ol>${(data.top_reasons || []).map((r) => `<li>${r}</li>`).join("")}</ol>
+        <p><strong>Top risks:</strong> ${(data.top_risks || []).join(" · ")}</p>
+      </div>
+      <div class="deep-section">
+        <h4>Business snapshot</h4>
+        <p>${data.business_snapshot}</p>
+      </div>
+      <div class="deep-section">
+        <h4>Financials · Valuation · Technicals</h4>
+        <div class="deep-kv-grid">
+          <div class="deep-kv"><span>ROE</span><strong>${data.financials_glance?.roe ?? "—"}%</strong></div>
+          <div class="deep-kv"><span>Rev growth</span><strong>${data.financials_glance?.revenue_growth_yoy ?? "—"}%</strong></div>
+          <div class="deep-kv"><span>P/E fwd</span><strong>${data.valuation?.pe_forward ?? "—"}x</strong></div>
+          <div class="deep-kv"><span>FCF yield</span><strong>${data.valuation?.fcf_yield_pct ?? "—"}%</strong></div>
+          <div class="deep-kv"><span>RSI</span><strong>${data.technical?.rsi ?? "—"}</strong></div>
+          <div class="deep-kv"><span>Trend</span><strong>${data.technical?.primary_trend ?? "—"}</strong></div>
+        </div>
+      </div>
+      <div class="deep-section">
+        <h4>Desk verdict</h4>
+        <p>${data.desk_verdict}</p>
+      </div>
+      <div class="deep-section">
+        <h4>Full institutional card</h4>
+        <pre class="deep-card-pre">${data.card_text || ""}</pre>
+      </div>`;
+    deepBody.hidden = false;
+    if (deepLoad) deepLoad.hidden = true;
+  }
+
+  async function openDeepBrief(symbol, context = "") {
+    if (!deepDlg || !symbol) return;
+    const sym = symbol.trim().toUpperCase();
+    if (deepTitle) deepTitle.textContent = `${sym} — Full Stock Brief`;
+    if (deepBody) { deepBody.hidden = true; deepBody.innerHTML = ""; }
+    if (deepLoad) { deepLoad.hidden = false; deepLoad.textContent = "Building 8-pillar institutional brief…"; }
+    deepDlg.showModal();
+    try {
+      const url = `/api/deep-intelligence/${encodeURIComponent(sym)}?context=${encodeURIComponent(context)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.status || "Not found");
+      renderDeepBrief(data);
+    } catch {
+      if (deepLoad) deepLoad.textContent = `Could not build brief for ${sym}. Check symbol format (e.g. RELIANCE.NS, AAPL).`;
+    }
+  }
+
+  document.getElementById("deep-dialog-close")?.addEventListener("click", () => deepDlg?.close());
+  document.body.addEventListener("click", (e) => {
+    if (e.target.closest(".target-chip-edit, #run-now, .btn-run")) return;
+    const el = e.target.closest("[data-deep-symbol], .deep-trigger, .day-pick-item[data-symbol]");
+    if (!el) return;
+    const sym = el.dataset.deepSymbol || el.dataset.symbol;
+    if (!sym) return;
+    e.preventDefault();
+    openDeepBrief(sym, el.dataset.deepContext || "");
+  });
+
   document.getElementById("copy-share-link")?.addEventListener("click", async () => {
     const url = `${window.location.origin}${window.location.pathname}#morning-brief`;
     try {
@@ -360,7 +468,19 @@
   }
 
   document.querySelectorAll(".target-chip-edit").forEach((el) => {
-    el.addEventListener("click", openTargetDialog);
+    el.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openTargetDialog();
+    });
+    el.setAttribute("role", "button");
+    el.setAttribute("tabindex", "0");
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openTargetDialog();
+      }
+    });
   });
 
   document.getElementById("target-dialog-cancel")?.addEventListener("click", () => {

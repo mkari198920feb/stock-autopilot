@@ -7,6 +7,7 @@ import pandas as pd
 import yfinance as yf
 
 from stock_autopilot.collectors.cache import cache_get_json, cache_set_json
+from stock_autopilot.collectors.symbol_normalize import to_yahoo_symbol
 from stock_autopilot.models.schemas import StockMetrics
 
 _CACHE_TTL = 3600  # 1h for daily equity metrics
@@ -132,6 +133,7 @@ def fetch_stock_metrics(
     region: str,
     lookback_days: int = 252,
 ) -> StockMetrics | None:
+    symbol = to_yahoo_symbol(symbol)
     cache_key = f"metrics:{symbol}:{lookback_days}"
     hit = cache_get_json(cache_key)
     if isinstance(hit, dict):
