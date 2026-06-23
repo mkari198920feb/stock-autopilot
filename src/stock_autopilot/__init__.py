@@ -1,3 +1,3 @@
-"""Stock Autopilot — global market analysis agent."""
+"""LUMIQ — global markets research autopilot."""
 
 __version__ = "0.1.0"

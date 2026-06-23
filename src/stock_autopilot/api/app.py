@@ -13,10 +13,12 @@ from stock_autopilot.agent.market_pulse import run_market_pulse
 from stock_autopilot.agent.orchestrator import run_autopilot
 from stock_autopilot.analysis.crypto_research import build_crypto_research_note
 from stock_autopilot.analysis.desk_stats import get_desk_activity
+from stock_autopilot.api.auth import enforce_request_auth
 from stock_autopilot.api.helpers import freshness_meta
 from stock_autopilot.config import settings
 from stock_autopilot.investor_profile import get_return_target_pct
 from stock_autopilot.collectors.cache import init_cache
+from stock_autopilot.collectors.data_health import run_data_health_check
 from stock_autopilot.db import (
     get_latest_commodities_desk_dict,
     get_latest_crypto_pulse_dict,
@@ -124,6 +126,8 @@ def _dashboard_context(latest: dict | None, runs: list[dict]) -> dict:
     elif latest and latest.get("macro", {}).get("summary"):
         ctx["executive_pulse"] = latest["macro"]["summary"]
     ctx["email_desk_summary"] = "Global · India · Crypto · Commodities · Equity notes · Model books"
+    ctx["auth_enabled"] = cfg.get("auth", {}).get("enabled", False)
+    ctx["data_health"] = run_data_health_check(cfg)
     ctx["today_picks_date"] = ""
     if gd and gd.get("captured_at"):
         ctx["today_picks_date"] = gd["captured_at"][:10]
@@ -149,10 +153,16 @@ def _dashboard_context(latest: dict | None, runs: list[dict]) -> dict:
 
     return ctx
 
-app = FastAPI(title="LUMIQ", version="0.1.0")
+app = FastAPI(title="LUMIQ", version="0.2.0")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+
+@app.middleware("http")
+async def lumiq_auth_middleware(request: Request, call_next):
+    enforce_request_auth(request)
+    return await call_next(request)
 
 
 @app.on_event("startup")
@@ -377,6 +387,19 @@ async def favicon():
     return HTMLResponse(status_code=204)
 
 
+@app.get("/api/data-health")
+async def api_data_health(refresh: bool = False):
+    return run_data_health_check(load_config(), force=refresh)
+
+
 @app.get("/health")
 async def health():
-    return {"status": "ok", "scheduler": "active"}
+    cfg = load_config()
+    dh = run_data_health_check(cfg)
+    return {
+        "status": "ok" if dh.get("status") != "critical" else "degraded",
+        "scheduler": "active",
+        "data_health": dh.get("status"),
+        "data_probes_ok": f"{dh.get('ok_count')}/{dh.get('total')}",
+        "auth_enabled": cfg.get("auth", {}).get("enabled", False),
+    }

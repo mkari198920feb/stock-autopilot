@@ -47,7 +47,7 @@ def symbol_to_id(symbol: str) -> str | None:
 
 
 def _fetch_url(url: str, timeout: int = 12) -> Any:
-    return fetch_json(url, headers=UA, timeout=timeout)
+    return fetch_json(url, headers=UA, timeout=timeout, retries=3)
 
 
 def market_change_24h(row: dict) -> float | None:

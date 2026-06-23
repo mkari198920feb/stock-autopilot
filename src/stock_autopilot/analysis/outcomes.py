@@ -9,12 +9,13 @@ from stock_autopilot.db import (
     insert_pick_snapshots,
     resolve_outcome_row,
 )
-from stock_autopilot.models.schemas import CryptoPulseSnapshot, IndiaDeskSnapshot, StockPick
+from stock_autopilot.models.schemas import CryptoPulseSnapshot, CommoditiesDeskSnapshot, IndiaDeskSnapshot, StockPick
 
 
 HORIZONS_DAYS = {"1d": 1, "7d": 7, "30d": 30}
 _LIVE_CACHE_KEY = "track_record:live_open"
 _LIVE_CACHE_TTL = 180
+_CRYPTO_QUOTE = {"BTC": "BTC-USD", "ETH": "ETH-USD"}
 
 
 def _now() -> datetime:
@@ -163,6 +164,32 @@ def record_crypto_pulse(pulse: CryptoPulseSnapshot) -> None:
     insert_pick_snapshots(rows)
 
 
+def record_commodities_desk(snapshot: CommoditiesDeskSnapshot) -> None:
+    rows = []
+    for pick in snapshot.desk_picks:
+        rows.append(
+            {
+                "source": "commodities_desk",
+                "desk_id": snapshot.desk_id,
+                "symbol": pick.symbol,
+                "name": pick.name,
+                "captured_at": snapshot.captured_at.isoformat(),
+                "entry_price": pick.price,
+                "target_price": None,
+                "upside_pct": pick.change_1m_pct,
+                "rating": pick.bias_label,
+                "bias": pick.bias_class,
+            }
+        )
+    insert_pick_snapshots(rows)
+
+
+def _quote_symbol(symbol: str, source: str) -> str:
+    if source == "crypto_pulse":
+        return _CRYPTO_QUOTE.get(symbol.upper(), f"{symbol.upper()}-USD")
+    return symbol
+
+
 def resolve_due_outcomes() -> int:
     from stock_autopilot.collectors.quotes import fetch_quote
 
@@ -176,7 +203,7 @@ def resolve_due_outcomes() -> int:
         if due > now:
             continue
 
-        symbol = row["symbol"]
+        symbol = _quote_symbol(row["symbol"], row["source"])
         exit_p = fetch_quote(symbol)
         if exit_p is None:
             continue
@@ -184,6 +211,8 @@ def resolve_due_outcomes() -> int:
         entry = float(row["entry_price"])
         horizon = row["horizon"]
         if row["source"] == "crypto_pulse":
+            ret, outcome, target_hit = _classify_crypto_bias(entry, exit_p, row.get("bias"))
+        elif row["source"] == "commodities_desk":
             ret, outcome, target_hit = _classify_crypto_bias(entry, exit_p, row.get("bias"))
         else:
             ret, outcome, target_hit = _classify_equity(
@@ -235,17 +264,17 @@ def get_live_open_performance(force_refresh: bool = False) -> dict:
         if len(pending_rows) >= 12:
             break
 
-    symbols = [r["symbol"] for r in pending_rows]
+    symbols = [_quote_symbol(r["symbol"], r["source"]) for r in pending_rows]
     quotes = batch_fetch_quotes(symbols, ttl=90)
 
     items: list[dict] = []
     returns: list[float] = []
     failed: list[str] = []
 
-    for row in pending_rows:
+    for row, quote_sym in zip(pending_rows, symbols):
         symbol = row["symbol"]
         entry = float(row["entry_price"])
-        exit_p = quotes.get(symbol)
+        exit_p = quotes.get(quote_sym)
         if exit_p is None:
             failed.append(symbol)
             continue
@@ -293,4 +322,10 @@ def track_record_summary(include_live: bool = True, force_live_refresh: bool = F
         stats["live_open"] = get_live_open_performance(force_refresh=force_live_refresh)
     else:
         stats["live_open"] = {"count": 0, "items": [], "loading": True}
+    try:
+        from stock_autopilot.analysis.signal_backtest import signal_validation_report
+
+        stats["validation"] = signal_validation_report()
+    except Exception:
+        stats["validation"] = {"methodology": "rule_based", "confidence": "low", "notes": []}
     return stats

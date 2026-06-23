@@ -409,6 +409,17 @@ def insert_pick_snapshots(rows: list[dict]) -> None:
             captured = datetime.fromisoformat(row["captured_at"].replace("Z", "+00:00"))
             if captured.tzinfo is None:
                 captured = captured.replace(tzinfo=timezone.utc)
+            day = captured.date().isoformat()
+            dup = conn.execute(
+                """
+                SELECT 1 FROM pick_snapshots
+                WHERE source = ? AND symbol = ? AND substr(captured_at, 1, 10) = ?
+                LIMIT 1
+                """,
+                (row["source"], row["symbol"], day),
+            ).fetchone()
+            if dup:
+                continue
             cur = conn.execute(
                 """
                 INSERT INTO pick_snapshots

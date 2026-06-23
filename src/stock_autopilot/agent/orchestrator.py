@@ -3,6 +3,8 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from stock_autopilot.analysis.portfolios import build_model_portfolios
 from stock_autopilot.analysis.research_notes import format_macro_briefing
 from stock_autopilot.analysis.scorer import rank_candidates
@@ -55,9 +57,20 @@ class AutopilotAgent:
 
         self._log("Step 3/5: Fetching news & collaboration themes")
         news_map: dict[str, tuple[float, list[str], list[str]]] = {}
-        for m in metrics:
-            news = fetch_news_for_symbol(m.symbol, limit=6)
-            news_map[m.symbol] = aggregate_news_sentiment(news)
+
+        def _news_for(symbol: str):
+            news = fetch_news_for_symbol(symbol, limit=6)
+            return symbol, aggregate_news_sentiment(news)
+
+        workers = min(8, max(1, len(metrics)))
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = [pool.submit(_news_for, m.symbol) for m in metrics]
+            for fut in as_completed(futures):
+                try:
+                    sym, agg = fut.result()
+                    news_map[sym] = agg
+                except Exception:
+                    continue
 
         self._log("Step 4/5: Scoring & ranking for return profile")
         from stock_autopilot.investor_profile import get_return_target_pct

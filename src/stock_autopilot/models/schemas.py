@@ -217,6 +217,8 @@ class IndiaMacroBar(BaseModel):
     brent_impact: str = "Neutral"
     repo_rate: float = 6.50
     rbi_stance: str = "Neutral"
+    repo_rate_source: str = "config"
+    market_data_as_of: datetime | None = None
     nifty_pe: float | None = None
     pe_assessment: str = "Fair"
     ticker_text: str = ""
@@ -266,6 +268,9 @@ class IndiaMFNote(BaseModel):
     sip_note: str
     desk_note: str
     risk_class: str = "green"
+    nav: str | None = None
+    nav_date: str | None = None
+    data_source: str = "config"
 
 
 class IndiaFixedIncomeNote(BaseModel):
@@ -280,6 +285,8 @@ class IndiaFixedIncomeNote(BaseModel):
     desk_note: str
     risk_class: str = "green"
     category: str  # bond or fd
+    data_source: str = "config"
+    as_of: str | None = None
 
 
 class IndiaDeskSnapshot(BaseModel):

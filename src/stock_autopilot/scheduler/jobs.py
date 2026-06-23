@@ -40,6 +40,12 @@ def _maybe_run_commodities_desk() -> None:
     run_commodities_desk()
 
 
+def _maybe_run_data_health() -> None:
+    from stock_autopilot.collectors.data_health import run_data_health_check
+
+    run_data_health_check(force=True)
+
+
 def _resolve_outcomes() -> None:
     from stock_autopilot.analysis.outcomes import resolve_due_outcomes
     from stock_autopilot.collectors.cache import init_cache
@@ -113,6 +119,12 @@ def start_scheduler() -> BackgroundScheduler:
         _resolve_outcomes,
         CronTrigger(minute=20),
         id="hourly_resolve_outcomes",
+        replace_existing=True,
+    )
+    _scheduler.add_job(
+        _maybe_run_data_health,
+        CronTrigger(minute=25),
+        id="hourly_data_health",
         replace_existing=True,
     )
     if cfg.get("apex_deep", {}).get("enabled", True):

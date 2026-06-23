@@ -6,7 +6,7 @@
     <title>{{ brand_name }} · Markets Desk</title>
     <script>
       (function () {
-        var t = localStorage.getItem("uptick-theme") || "dark";
+        var t = localStorage.getItem("lumiq-theme") || localStorage.getItem("uptick-theme") || "dark";
         document.documentElement.setAttribute("data-theme", t);
       })();
     </script>
@@ -178,8 +178,17 @@
 
       <div class="disclaimer-bar">
         <span class="warn-icon">⚠</span>
-        Research publisher only — not financial advice. {{ brand_name }} illustrative research; you self-direct all trades.
+        Research publisher only — not financial advice. {{ brand_name }} uses rule-based signals, not ML predictions.
       </div>
+
+      {% if data_health %}
+      <div class="data-health-bar data-health-{{ data_health.status }}">
+        <span class="dh-label">Data feed</span>
+        <strong>{{ data_health.status|upper }}</strong>
+        <span class="dh-meta">{{ data_health.ok_count }}/{{ data_health.total }} probes OK</span>
+        {% if auth_enabled %}<span class="dh-meta">Auth ON</span>{% else %}<span class="dh-meta">Auth off (local)</span>{% endif %}
+      </div>
+      {% endif %}
 
       <div id="rerank-banner" class="rerank-banner" {% if not needs_rerank %}hidden{% endif %}>
         <span class="rerank-banner-text">Picks were ranked for a different return target. Re-rank to match your {{ target_min }}–{{ target_max }}% goal.</span>
@@ -248,6 +257,7 @@
           {% if desk_activity.recent_outcomes %}
           <div class="track-resolved">
             <strong>Recent resolved ({{ desk_activity.resolved_outcomes }} total)</strong>
+            <p class="track-validation-note">Rule-based signal validation — not ML. See CLI: <code>signal-backtest</code>.</p>
             <ul>
               {% for o in desk_activity.recent_outcomes %}
               <li>
@@ -595,8 +605,8 @@
       <section class="crypto-pulse-section" id="crypto">
         <div class="module-hero module-purple">
           <div>
-            <h2>⚡ Crypto Pulse — BTC / ETH</h2>
-            <p>{{ crypto_pulse.session_name }} session · {{ crypto_pulse.session_liquidity_note }}</p>
+            <h2>⚡ Crypto Signals — BTC / ETH</h2>
+            <p>{{ crypto_pulse.session_name }} session · Rule-based 1H bias (not ML) · {{ crypto_pulse.session_liquidity_note }}</p>
           </div>
           <div class="module-pills">
             <span class="freshness-item fresh-{{ fresh_crypto.badge_class }}">{{ fresh_crypto.label }}</span>
@@ -894,7 +904,7 @@
           <article class="india-panel panel-mf">
             <div class="india-panel-head">
               <h3>📊 Mutual Funds</h3>
-              <span class="panel-count">{{ india_desk.mutual_funds|length }} funds</span>
+              <span class="panel-count">{{ india_desk.mutual_funds|length }} funds · AMFI NAV when live</span>
             </div>
             <div class="advisory-table-wrap">
               <table class="mc-table">
@@ -911,7 +921,7 @@
                   {% for mf in india_desk.mutual_funds %}
                   <tr>
                     <td><strong>{{ mf.category }}</strong></td>
-                    <td>{{ mf.fund_name }}<span class="mc-stock-name">ER {{ mf.expense_direct }}</span></td>
+                    <td>{{ mf.fund_name }}<span class="mc-stock-name">ER {{ mf.expense_direct }}{% if mf.nav %} · {{ mf.nav }}{% endif %}</span></td>
                     <td><span class="mc-badge buy">{{ mf.rating_label }}</span></td>
                     <td class="pct-up">{{ mf.returns_1y }}</td>
                     <td>{{ mf.returns_3y }}</td>
@@ -929,7 +939,7 @@
                   <strong>{{ mf.fund_name }}</strong>
                   <span class="advisory-rating">{{ mf.rating_label }}</span>
                 </div>
-                <p class="advisory-meta">{{ mf.category }} · 1Y {{ mf.returns_1y }} · 3Y {{ mf.returns_3y }}</p>
+                <p class="advisory-meta">{{ mf.category }} · 1Y {{ mf.returns_1y }} · 3Y {{ mf.returns_3y }}{% if mf.nav_date %} · NAV {{ mf.nav_date }}{% endif %}</p>
                 <p class="advisory-desk">{{ mf.desk_note }}</p>
               </div>
               {% endfor %}
@@ -975,7 +985,7 @@
                   <strong>{{ b.instrument }}</strong>
                   <span class="advisory-rating">{{ b.credit_rating }}</span>
                 </div>
-                <p class="advisory-meta">{{ b.yield_label }} · {{ b.tenor }}</p>
+                <p class="advisory-meta">{{ b.yield_label }} · {{ b.tenor }}{% if b.as_of %} · as of {{ b.as_of }}{% endif %}{% if b.data_source == 'curated' %} · curated{% endif %}</p>
                 <p class="advisory-desk">{{ b.desk_note }}</p>
               </div>
               {% endfor %}
@@ -986,7 +996,7 @@
           <article class="india-panel panel-fd">
             <div class="india-panel-head">
               <h3>💰 Fixed Deposits</h3>
-              <span class="panel-count">{{ india_desk.fixed_deposits|length }} deals</span>
+              <span class="panel-count">{{ india_desk.fixed_deposits|length }} deals · curated rates</span>
             </div>
             <div class="advisory-table-wrap">
               <table class="mc-table">
@@ -1021,7 +1031,7 @@
                   <strong>{{ fd.instrument }}</strong>
                   <span class="advisory-rating">{{ fd.credit_rating }}</span>
                 </div>
-                <p class="advisory-meta">{{ fd.yield_label }} · {{ fd.tenor }}</p>
+                <p class="advisory-meta">{{ fd.yield_label }} · {{ fd.tenor }}{% if fd.as_of %} · verified {{ fd.as_of }}{% endif %}</p>
                 <p class="advisory-desk">{{ fd.desk_note }}</p>
               </div>
               {% endfor %}

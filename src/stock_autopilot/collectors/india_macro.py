@@ -89,6 +89,8 @@ def fetch_india_macro(cfg: dict) -> IndiaMacroBar:
         brent_impact=brent_impact,
         repo_rate=repo,
         rbi_stance=stance,
+        repo_rate_source="config",
+        market_data_as_of=datetime.now(timezone.utc),
         nifty_pe=round(nifty_pe, 1) if nifty_pe else None,
         pe_assessment=pe_assessment,
         ticker_text=ticker,

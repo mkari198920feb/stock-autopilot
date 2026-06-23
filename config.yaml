@@ -68,13 +68,27 @@ apex:
   tagline: Institutional-grade equity research across every risk profile
   powered_by: LUMIQ
 
-# APEX Deep Intelligence — stock detail engine + live market pulse boards
+# Auth — disabled locally; enable when deploying online with IAM federation + RBAC
+auth:
+  enabled: false
+  mode: iam_federation  # future: oidc | jwt
+  rbac:
+    default_role: viewer
+    roles:
+      admin:
+        permissions: [desk:read, desk:write, admin:config, email:preview]
+      analyst:
+        permissions: [desk:read, desk:write, email:preview]
+      viewer:
+        permissions: [desk:read]
+
+# LUMIQ Deep Intelligence — stock detail engine + live market pulse boards
 apex_deep:
   enabled: true
   pulse_refresh_cron: "10,40 * * * *"
   auto_deep_on_pick_click: true
 
-# APEX Crypto Desk — hourly BTC/ETH pulse (public data proxies)
+# LUMIQ Crypto Desk — hourly BTC/ETH pulse (public data proxies)
 crypto_pulse:
   enabled: true
   assets:
@@ -89,7 +103,7 @@ crypto_pulse:
     microstructure: 0.10
     session_timing: 0.05
 
-# APEX Commodities Desk — futures, energy, metals, ag proxies
+# LUMIQ Commodities Desk — futures, energy, metals, ag proxies
 commodities_desk:
   enabled: true
   refresh_cron: "15 * * * *"
@@ -124,7 +138,7 @@ commodities_desk:
         - {symbol: "USO", name: "US Oil Fund", unit: "$"}
         - {symbol: "DBC", name: "Invesco DB Commodity", unit: "$"}
 
-# APEX India Intelligence Desk — NSE/BSE equities + MF/Bonds/FD advisory
+# LUMIQ India Intelligence Desk — NSE/BSE equities + live AMFI NAV + bond proxies
 india_desk:
   enabled: true
   daily_picks: 6
@@ -177,6 +191,7 @@ india_desk:
     INFY.NS: "500209"
   mutual_funds:
     - name: Parag Parikh Flexi Cap Fund — Direct Growth
+      amfi_scheme_code: "122639"
       amc: PPFAS
       category: Flexi Cap
       rating: "★★★★★ RECOMMENDED"
@@ -190,6 +205,7 @@ india_desk:
       desk_note: "Best-in-class global flexi with low overlap to Nifty 50 — core holding candidate."
       risk_class: green
     - name: Mirae Asset Large Cap Fund — Direct Growth
+      amfi_scheme_code: "118834"
       amc: Mirae Asset
       category: Large Cap
       rating: RECOMMENDED
@@ -202,6 +218,7 @@ india_desk:
       desk_note: "Consistent large-cap compounder — pair with mid-cap satellite."
       risk_class: green
     - name: Nippon India Small Cap Fund — Direct Growth
+      amfi_scheme_code: "118778"
       amc: Nippon India
       category: Small Cap
       rating: WATCH
@@ -235,6 +252,7 @@ india_desk:
       risk_class: green
   fixed_deposits:
     - name: SBI FD (General Public)
+      last_verified: "2026-06-01"
       issuer: State Bank of India
       type: Bank FD
       rate: "6.5% p.a. (1–3Y indicative)"
@@ -245,6 +263,7 @@ india_desk:
       desk_note: "Safety first — do not exceed DICGC limit per bank."
       risk_class: green
     - name: AU Small Finance Bank FD
+      last_verified: "2026-06-01"
       issuer: AU SFB
       type: Small Finance Bank FD
       rate: "8.0% p.a. (senior citizens higher)"
@@ -255,6 +274,7 @@ india_desk:
       desk_note: "Higher yield but cap at ₹5L per bank per the DICGC rule."
       risk_class: yellow
     - name: Bajaj Finance Corporate FD
+      last_verified: "2026-06-01"
       issuer: Bajaj Finance
       type: Corporate FD
       rate: "7.5% p.a. (AAA rated)"
@@ -265,7 +285,7 @@ india_desk:
       desk_note: "AAA corporate — still not bank-insured; assess concentration risk."
       risk_class: yellow
 
-# APEX Global Intelligence — regional boards + tiered crypto universe
+# LUMIQ Global Intelligence — regional boards + tiered crypto universe
 global_desk:
   enabled: true
   markets_file: config/global_desk.yaml
@@ -291,13 +311,7 @@ notifications:
     include_model_portfolios: true
     max_regional_boards: 12
     picks_per_board_email: 3
-    recipients:
-      - 63331961+mkari198920feb@users.noreply.github.com
-      - friend1@example.com
-      - friend2@example.com
-      - friend4@example.com
-      - friend3@example.com
-      - friend5@example.com
+    recipients: []  # use EMAIL_RECIPIENTS in .env — do not commit personal emails
 
 # Publisher mode: illustrative model portfolios for friends (not personalized advice)
 model_portfolios:

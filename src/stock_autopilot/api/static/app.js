@@ -1,5 +1,6 @@
 (function () {
-  const THEME_KEY = "uptick-theme";
+  const THEME_KEY = "lumiq-theme";
+  const LEGACY_THEME_KEY = "uptick-theme";
 
   function getTheme() {
     return document.documentElement.getAttribute("data-theme") || "light";
@@ -10,6 +11,11 @@
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem(THEME_KEY, theme);
     syncThemeControls(theme);
+  }
+
+  const savedTheme = localStorage.getItem(THEME_KEY) || localStorage.getItem(LEGACY_THEME_KEY);
+  if (savedTheme && !localStorage.getItem(THEME_KEY) && localStorage.getItem(LEGACY_THEME_KEY)) {
+    localStorage.setItem(THEME_KEY, LEGACY_THEME_KEY);
   }
 
   function syncThemeControls(theme) {
@@ -559,10 +565,11 @@
   }
 
   // Onboarding (first visit)
-  const ONBOARD_KEY = "uptick-onboarded";
+  const ONBOARD_KEY = "lumiq-onboarded";
+  const LEGACY_ONBOARD_KEY = "uptick-onboarded";
   const onboarding = document.getElementById("onboarding");
   const onboardingDone = document.getElementById("onboarding-done");
-  if (onboarding && !localStorage.getItem(ONBOARD_KEY)) {
+  if (onboarding && !localStorage.getItem(ONBOARD_KEY) && !localStorage.getItem(LEGACY_ONBOARD_KEY)) {
     onboarding.hidden = false;
   }
   onboardingDone?.addEventListener("click", () => {
@@ -574,14 +581,20 @@
   });
 
   // Watchlist (localStorage)
-  const WATCH_KEY = "uptick-watchlist";
+  const WATCH_KEY = "lumiq-watchlist";
+  const LEGACY_WATCH_KEY = "uptick-watchlist";
   const watchInput = document.getElementById("watchlist-input");
   const watchAdd = document.getElementById("watchlist-add");
   const watchList = document.getElementById("watchlist-items");
 
   function loadWatchlist() {
     try {
-      return JSON.parse(localStorage.getItem(WATCH_KEY) || "[]");
+      const raw = localStorage.getItem(WATCH_KEY) || localStorage.getItem(LEGACY_WATCH_KEY) || "[]";
+      const items = JSON.parse(raw);
+      if (!localStorage.getItem(WATCH_KEY) && localStorage.getItem(LEGACY_WATCH_KEY)) {
+        localStorage.setItem(WATCH_KEY, JSON.stringify(items));
+      }
+      return items;
     } catch {
       return [];
     }

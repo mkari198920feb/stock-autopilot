@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stock Autopilot CLI — run agent, start dashboard, or one-off scan."""
+"""LUMIQ CLI — run desks, dashboard, data health, and outcome tracking."""
 
 from __future__ import annotations
 
@@ -256,6 +256,41 @@ def cmd_resolve_outcomes(_: argparse.Namespace) -> None:
     print(f"Total resolved: {stats.get('total_resolved')} | Hit rate: {stats.get('hit_rate_pct')}%")
     live = stats.get("live_open", {})
     print(f"Open calls: {live.get('count')} | Avg return: {live.get('avg_return_pct')}%")
+    val = stats.get("validation") or {}
+    conf = val.get("confidence", "low")
+    print(f"Signal validation confidence: {conf}")
+    for bt in (val.get("rule_backtests") or [])[:3]:
+        if bt.get("ok") and bt.get("signals"):
+            print(
+                f"  Backtest {bt['symbol']}: {bt['signals']} signals, "
+                f"hit {bt.get('hit_rate_pct')}% avg {bt.get('avg_return_pct')}%"
+            )
+
+
+def cmd_signal_backtest(_: argparse.Namespace) -> None:
+    from stock_autopilot.analysis.signal_backtest import signal_validation_report
+
+    report = signal_validation_report()
+    print("\nLUMIQ signal validation (rule-based, not ML)")
+    print(f"Confidence: {report.get('confidence')}")
+    resolved = report.get("resolved_outcomes") or {}
+    print(
+        f"Resolved desk calls: {resolved.get('total_resolved')} | "
+        f"Hit rate: {resolved.get('hit_rate_pct')}%"
+    )
+    print("\nRSI oversold rule backtests (7d hold):")
+    for bt in report.get("rule_backtests") or []:
+        if not bt.get("ok"):
+            print(f"  {bt.get('symbol')}: FAIL — {bt.get('error')}")
+            continue
+        hr = bt.get("hit_rate_pct")
+        hr_s = f"{hr}%" if hr is not None else "n/a"
+        print(
+            f"  {bt['symbol']}: {bt.get('signals', 0)} signals · hit {hr_s} · "
+            f"avg {bt.get('avg_return_pct')}%"
+        )
+    for note in report.get("notes") or []:
+        print(f"  · {note}")
 
 
 def cmd_global_desk(_: argparse.Namespace) -> None:
@@ -298,6 +333,24 @@ def cmd_deep_brief(args: argparse.Namespace) -> None:
     print(brief.card_text)
 
 
+def cmd_data_health(_: argparse.Namespace) -> None:
+    from stock_autopilot.collectors.data_health import run_data_health_check
+
+    report = run_data_health_check(force=True)
+    print(f"\nData health: {report['status'].upper()} ({report['ok_count']}/{report['total']} probes)")
+    for p in report.get("probes", []):
+        mark = "OK" if p.get("ok") else "FAIL"
+        price = f" @ {p['price']}" if p.get("price") else ""
+        stale = f" (bar {p['bar_date']})" if p.get("bar_date") else ""
+        print(f"  [{mark}] {p.get('label', p.get('symbol'))}{price}{stale}")
+    for f in report.get("feeds", []):
+        mark = "OK" if f.get("ok") else "FAIL"
+        extra = f" ({f.get('schemes')} schemes)" if f.get("schemes") else ""
+        print(f"  [{mark}] {f.get('label', f.get('source'))}{extra}")
+    for note in report.get("notes", []):
+        print(f"  note: {note}")
+
+
 def cmd_commodities_desk(_: argparse.Namespace) -> None:
     from stock_autopilot.agent.commodities_desk import run_commodities_desk
 
@@ -325,7 +378,7 @@ def cmd_crypto_pulse(_: argparse.Namespace) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Stock Autopilot — global analysis agent")
+    parser = argparse.ArgumentParser(description="LUMIQ — global markets research autopilot")
     sub = parser.add_subparsers(dest="command")
 
     sub.add_parser("run", help="Run one agent cycle now").set_defaults(func=cmd_run)
@@ -339,6 +392,8 @@ def main() -> None:
     sub.add_parser("crypto-pulse", help="Run BTC/ETH hourly crypto prediction now").set_defaults(func=cmd_crypto_pulse)
 
     sub.add_parser("commodities-desk", help="Run commodities futures & macro desk").set_defaults(func=cmd_commodities_desk)
+
+    sub.add_parser("data-health", help="Probe Yahoo/market data feeds").set_defaults(func=cmd_data_health)
 
     sub.add_parser("india-desk", help="Run LUMIQ India equities + MF/Bonds/FD desk").set_defaults(func=cmd_india_desk)
 
@@ -357,6 +412,8 @@ def main() -> None:
     vt.set_defaults(func=cmd_validate_tickers)
 
     sub.add_parser("resolve-outcomes", help="Resolve due pick outcomes + print track record").set_defaults(func=cmd_resolve_outcomes)
+
+    sub.add_parser("signal-backtest", help="Print rule-based signal validation + RSI backtests").set_defaults(func=cmd_signal_backtest)
 
     check_dash = sub.add_parser("check-dashboard", help="Test if dashboard is reachable locally")
     check_dash.add_argument("--port", type=int, default=8080)

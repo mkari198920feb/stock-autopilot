@@ -622,6 +622,24 @@ button.deep-trigger:not(.link-btn) {
   cursor: pointer;
 }
 
+.data-health-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+}
+.data-health-bar.data-health-healthy { border-color: rgba(16, 185, 129, 0.35); }
+.data-health-bar.data-health-degraded { border-color: rgba(245, 158, 11, 0.35); }
+.data-health-bar.data-health-critical { border-color: rgba(239, 68, 68, 0.35); }
+.dh-label { text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-size: 10px; }
+.dh-meta { color: var(--muted); }
+
 /* Commodities Desk */
 .commodities-desk-section { margin-bottom: 28px; }
 .module-hero.module-amber {
