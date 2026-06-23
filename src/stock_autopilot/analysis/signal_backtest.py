@@ -78,7 +78,7 @@ def run_default_rule_backtests(symbols: tuple[str, ...] | None = None) -> list[d
 
 
 def signal_validation_report(cfg: dict | None = None) -> dict:
-    """Combine resolved pick outcomes with lightweight rule backtests (no ML)."""
+    """Desk hit rates plus a few RSI rule backtests for sanity."""
     cfg = cfg or load_config()
     stats = get_outcome_stats()
     backtests = run_default_rule_backtests()
