@@ -1,5 +1,7 @@
 # LUMIQ — Stock Autopilot
 
+[![LUMIQ CI](https://github.com/mkari198920feb/stock-autopilot/actions/workflows/ci.yml/badge.svg)](https://github.com/mkari198920feb/stock-autopilot/actions/workflows/ci.yml)
+
 **LUMIQ** is a multi-desk research autopilot: global equities, India NSE, crypto signals, commodities, live market pulse, and daily email digest — tuned toward a configurable return profile.
 
 Built by [Muralikrishna Kari](https://github.com/mkari198920feb).
@@ -8,13 +10,25 @@ Built by [Muralikrishna Kari](https://github.com/mkari198920feb).
 
 ---
 
-## Related projects
+## Screenshots
+
+> Add captures under [`docs/screenshots/`](docs/screenshots/) — see that folder for filenames and instructions.
+
+<!-- Uncomment after adding images:
+![LUMIQ dashboard](docs/screenshots/dashboard-overview.png)
+![Market pulse](docs/screenshots/market-pulse.png)
+-->
+
+---
+
+## Related projects (public)
 
 | Project | Repo | Description |
 |---------|------|-------------|
 | **Agentic AI Academy** | [agentic-ai-academy](https://github.com/mkari198920feb/agentic-ai-academy) | AI/ML learning wiki |
-| **HireFlow** | [hireflow](https://github.com/mkari198920feb/hireflow) | AI job assistant |
-| **Robinhood Agent** | [robinhood-trading-agent](https://github.com/mkari198920feb/robinhood-trading-agent) | Trading decision support |
+| **Robinhood Agent** | [robinhood-trading-agent](https://github.com/mkari198920feb/robinhood-trading-agent) | Rules-based trading decision support |
+
+Other portfolio repos (`hireflow`, `job-application-agent`) are private.
 
 ---
 
@@ -58,17 +72,18 @@ Open **http://127.0.0.1:8080**
 
 ```
 stock-autopilot/
-├── main.py                 # CLI entry + FastAPI dashboard
-├── config.yaml             # Universes, crons, brand, auth/RBAC
-├── lumiq/                  # Core desk modules
-│   ├── global_desk.py
-│   ├── india_desk.py
-│   ├── crypto_pulse.py
-│   ├── commodities.py
-│   ├── market_pulse.py
-│   └── email_digest.py
-├── tests/                  # pytest suite
-└── .env                    # Secrets (gitignored)
+├── main.py                      # CLI entry + FastAPI dashboard
+├── config.yaml                  # Universes, crons, brand, auth/RBAC
+├── src/stock_autopilot/
+│   ├── agent/                   # Desk runners (global, india, crypto, …)
+│   ├── analysis/                # Scoring, backtests, research notes
+│   ├── api/                     # FastAPI app + dashboard templates
+│   ├── collectors/              # Yahoo, CoinGecko, AMFI data feeds
+│   ├── notifications/           # Email digest builder
+│   └── db.py                    # SQLite persistence
+├── tests/                       # pytest suite
+├── docs/screenshots/            # Dashboard captures for README / LinkedIn
+└── .env                         # Secrets (gitignored)
 ```
 
 ### Data sources
@@ -89,6 +104,7 @@ stock-autopilot/
 - **Desk crons** — schedule for each research desk
 - **Brand** — `apex.brand_name: LUMIQ`
 - **Auth/RBAC** — optional IAM federation scaffold
+- **Email recipients** — keep empty in git; set via `.env` (`EMAIL_RECIPIENTS`)
 
 ### `.env`
 
@@ -152,4 +168,4 @@ pytest -q
 
 ## License
 
-Private — personal research tooling.
+[MIT](LICENSE) — research tooling; not financial advice.

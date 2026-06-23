@@ -505,9 +505,9 @@ def resolve_outcome_row(
 
 
 def get_outcome_stats() -> dict:
-    from stock_autopilot.db import get_conn
     from datetime import timedelta
 
+    init_db()
     cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
     with get_conn() as conn:
         open_calls = conn.execute(
