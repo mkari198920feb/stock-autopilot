@@ -43,8 +43,8 @@ Email digest fires after the autopilot cron if SMTP is configured.
 ```
 main.py                 CLI + serves the web UI
 config.yaml             watchlists, crons, brand, auth toggle
-data/universe/nyse.txt  full NYSE common-stock list (Yahoo symbols)
-scripts/                refresh_nyse_universe.py
+data/universe/us_equities.txt  NASDAQ + NYSE common stocks (~5.5k)
+scripts/                refresh_us_equities.py
 src/stock_autopilot/
   agent/                desk runners
   collectors/           yfinance, coingecko, amfi
@@ -61,19 +61,19 @@ Data: mostly Yahoo Finance + CoinGecko + AMFI NAV files. Free tiers — expect d
 
 **`config.yaml`** — universes, desk schedules, `apex.brand_name` (LUMIQ), optional RBAC if you put this behind a gateway. Keep `notifications.email.recipients` empty in git; use env vars for actual addresses.
 
-### NYSE universe
+### US equities universe
 
-The full NYSE common-stock list lives in **`data/universe/nyse.txt`** (~2,000 symbols, one per line, Yahoo format). Autopilot and the global US desk merge it at runtime — no need to paste tickers into `config.yaml`.
+The full US common-stock list lives in **`data/universe/us_equities.txt`** (~5,500 symbols — NASDAQ + NYSE, one ticker per line, Yahoo format). Autopilot and the global US desk load it at runtime; you don't paste tickers into `config.yaml`.
 
-Refresh when listings change (IPO/delisting season):
+Refresh when listings change:
 
 ```bash
-python scripts/refresh_nyse_universe.py
+python scripts/refresh_us_equities.py
 ```
 
-Source: [NASDAQ Trader otherlisted.txt](https://www.nasdaqtrader.com/dynamic/SymDir/otherlisted.txt) — filtered to NYSE (`Exchange=N`) common equities; ETFs, preferreds, warrants, units, and test symbols are dropped. Class shares use Yahoo dashes (`BRK-B`).
+Pulls from [NASDAQ listed](https://www.nasdaqtrader.com/dynamic/SymDir/nasdaqlisted.txt) and [other listed](https://www.nasdaqtrader.com/dynamic/SymDir/otherlisted.txt). ETFs, preferreds, warrants, units, and test symbols are dropped. Class shares use Yahoo dashes (`BRK-B`).
 
-Large scans use batched yfinance pulls (`agent.scan_batch_size`) and cap news fetch (`agent.max_news_symbols`). Volume filtering still happens at pick time, not when loading the universe.
+Scans are batched (`agent.scan_batch_size`) and news is capped (`agent.max_news_symbols`). Volume filtering happens at pick time, not when loading the file — so a full run can take a while on first pull.
 
 **`.env`** — `SMTP_*`, `EMAIL_RECIPIENTS`, optional `OPENAI_API_KEY` for slightly nicer narrative blurbs in emails. See `.env.example`.
 

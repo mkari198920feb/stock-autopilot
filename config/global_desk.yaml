@@ -1,5 +1,5 @@
 # LUMIQ Global Intelligence — regional equity universes & crypto tiers (Yahoo Finance symbols)
-# US market tickers are merged with data/universe/nyse.txt at runtime (full NYSE scan).
+# US market uses data/universe/us_equities.txt at runtime (NASDAQ + NYSE common stocks).
 
 global_desk:
   picks_per_board: 5
@@ -12,19 +12,10 @@ global_desk:
       label: "🇺🇸 United States"
       exchange: "NYSE / NASDAQ"
       country: "United States"
-      theme: "Mag 7 + quality cyclicals"
+      theme: "Full US common-stock scan"
       top_risk: "Fed path & mega-cap concentration"
-      tickers:
-        - AAPL
-        - MSFT
-        - NVDA
-        - AMZN
-        - GOOGL
-        - META
-        - JPM
-        - UNH
-        - XOM
-        - V
+      use_us_equities_file: true
+      tickers: []
     canada:
       label: "🇨🇦 Canada"
       exchange: "TSX"

@@ -25,15 +25,17 @@ def test_brand_name_is_lumiq():
     assert "LUMIQ" in cfg["research_header"]
 
 
-def test_nyse_universe_loaded():
+def test_us_equities_loaded():
     tickers = load_nyse_tickers()
-    assert len(tickers) >= 1500
+    assert len(tickers) >= 5000
+    assert "AAPL" in tickers
+    assert "MSFT" in tickers
     assert "JPM" in tickers
     assert "BRK-B" in tickers
     assert all(" " not in t for t in tickers)
 
 
-def test_north_america_merges_nyse_file():
+def test_north_america_merges_us_file():
     merged = north_america_tickers()
     assert len(merged) >= len(load_nyse_tickers())
     assert merged == sorted(set(merged))
