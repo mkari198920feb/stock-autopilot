@@ -1,16 +1,10 @@
-# Global liquid universe — expand as needed. Yahoo Finance symbols.
+# Global liquid universe — Yahoo Finance symbols.
+# Full NYSE common equities live in data/universe/nyse.txt (see README to refresh).
+universe:
+  nyse_file: data/universe/nyse.txt
+
 regions:
-  north_america:
-    - AAPL
-    - MSFT
-    - GOOGL
-    - AMZN
-    - NVDA
-    - JPM
-    - UNH
-    - XOM
-    - JNJ
-    - V
+  north_america: []  # merged with data/universe/nyse.txt at scan time
   europe:
     - ASML
     - SAP
@@ -46,8 +40,11 @@ agent:
   daily_picks: 8
   max_per_region: 3
   max_per_sector: 2
-  min_avg_volume: 500000
+  min_avg_volume: 500000  # applied at pick stage, not universe load
   lookback_days: 252
+  scan_batch_size: 80     # yfinance batch size for large universes
+  scan_max_workers: 10
+  max_news_symbols: 250   # news fetch cap after metrics scan (full NYSE is 2000+)
 
 # Your return goal — used for scoring & UI (override via dashboard or .env)
 investor_profile:

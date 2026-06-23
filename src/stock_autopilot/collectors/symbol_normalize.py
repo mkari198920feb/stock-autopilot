@@ -40,6 +40,9 @@ def to_yahoo_symbol(symbol: str) -> str:
         return s
 
     if "." in s:
+        # NYSE class shares: BRK.B → BRK-B on Yahoo
+        if s.count(".") == 1 and s.replace(".", "").isalnum():
+            return s.replace(".", "-")
         return s
 
     if s in ("BTC", "ETH", "SOL", "BNB", "DOGE", "XRP", "ADA", "AVAX"):

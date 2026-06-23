@@ -11,7 +11,7 @@ from stock_autopilot.analysis.signal_backtest import (
 from stock_autopilot.api.auth import auth_settings, permissions_for_roles
 from stock_autopilot.collectors.amfi import lookup_amfi_nav, parse_amfi_nav_all as amfi_parse
 from stock_autopilot.collectors.data_health import run_data_health_check
-from stock_autopilot.universe import brand_cfg
+from stock_autopilot.universe import brand_cfg, load_nyse_tickers, north_america_tickers
 
 SAMPLE_AMFI = """Scheme Code;ISIN Div Payout/ISIN Growth;ISIN Div Reinvestment;Scheme Name;Net Asset Value;Date
 122639;INF879O01027;;Parag Parikh Flexi Cap Fund - Direct Plan - Growth;85.1234;17-Jun-2026
@@ -23,6 +23,20 @@ def test_brand_name_is_lumiq():
     cfg = brand_cfg()
     assert cfg["brand_name"] == "LUMIQ"
     assert "LUMIQ" in cfg["research_header"]
+
+
+def test_nyse_universe_loaded():
+    tickers = load_nyse_tickers()
+    assert len(tickers) >= 1500
+    assert "JPM" in tickers
+    assert "BRK-B" in tickers
+    assert all(" " not in t for t in tickers)
+
+
+def test_north_america_merges_nyse_file():
+    merged = north_america_tickers()
+    assert len(merged) >= len(load_nyse_tickers())
+    assert merged == sorted(set(merged))
 
 
 def test_equity_hit_on_strong_gain():

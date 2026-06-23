@@ -40,10 +40,13 @@ def run_global_desk() -> GlobalDeskSnapshot:
         if not tickers:
             continue
         region_label = mcfg.get("label", market_id)
+        agent_cfg = cfg.get("agent", {})
         metrics = batch_fetch_metrics(
             tickers,
             {t: region_label for t in tickers},
-            lookback_days=cfg.get("agent", {}).get("lookback_days", 252),
+            lookback_days=agent_cfg.get("lookback_days", 252),
+            max_workers=agent_cfg.get("scan_max_workers", 10),
+            batch_size=agent_cfg.get("scan_batch_size", 80),
         )
         market_metrics[market_id] = metrics
 

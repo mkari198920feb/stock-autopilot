@@ -152,18 +152,24 @@ def batch_fetch_metrics(
     region_map: dict[str, str],
     lookback_days: int = 252,
     max_workers: int = 8,
+    batch_size: int = 0,
 ) -> list[StockMetrics]:
     results: list[StockMetrics] = []
     if not symbols:
         return results
 
+    chunk_size = batch_size if batch_size > 0 else len(symbols)
+    workers = min(max_workers, max(1, chunk_size))
+
     def _one(sym: str) -> StockMetrics | None:
         return fetch_stock_metrics(sym, region_map.get(sym, "Global"), lookback_days)
 
-    with ThreadPoolExecutor(max_workers=min(max_workers, len(symbols))) as pool:
-        futures = {pool.submit(_one, sym): sym for sym in symbols}
-        for fut in as_completed(futures):
-            m = fut.result()
-            if m:
-                results.append(m)
+    for start in range(0, len(symbols), chunk_size):
+        chunk = symbols[start : start + chunk_size]
+        with ThreadPoolExecutor(max_workers=min(workers, len(chunk))) as pool:
+            futures = {pool.submit(_one, sym): sym for sym in chunk}
+            for fut in as_completed(futures):
+                m = fut.result()
+                if m:
+                    results.append(m)
     return results

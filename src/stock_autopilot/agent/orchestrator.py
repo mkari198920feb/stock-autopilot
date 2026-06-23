@@ -52,19 +52,29 @@ class AutopilotAgent:
         lookback = agent_cfg.get("lookback_days", 252)
 
         self._log(f"Step 2/5: Scanning {len(symbols)} global symbols")
-        metrics = batch_fetch_metrics(symbols, region_map, lookback)
+        metrics = batch_fetch_metrics(
+            symbols,
+            region_map,
+            lookback,
+            max_workers=agent_cfg.get("scan_max_workers", 10),
+            batch_size=agent_cfg.get("scan_batch_size", 80),
+        )
         self._log(f"Loaded metrics for {len(metrics)} symbols")
 
         self._log("Step 3/5: Fetching news & collaboration themes")
         news_map: dict[str, tuple[float, list[str], list[str]]] = {}
+        max_news = agent_cfg.get("max_news_symbols", 250)
+        news_targets = sorted(metrics, key=lambda m: m.avg_volume, reverse=True)[:max_news]
+        if len(metrics) > len(news_targets):
+            self._log(f"News limited to top {len(news_targets)} symbols by volume")
 
         def _news_for(symbol: str):
             news = fetch_news_for_symbol(symbol, limit=6)
             return symbol, aggregate_news_sentiment(news)
 
-        workers = min(8, max(1, len(metrics)))
+        workers = min(8, max(1, len(news_targets)))
         with ThreadPoolExecutor(max_workers=workers) as pool:
-            futures = [pool.submit(_news_for, m.symbol) for m in metrics]
+            futures = [pool.submit(_news_for, m.symbol) for m in news_targets]
             for fut in as_completed(futures):
                 try:
                     sym, agg = fut.result()

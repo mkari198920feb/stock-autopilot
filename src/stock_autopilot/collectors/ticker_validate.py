@@ -5,7 +5,12 @@ from dataclasses import dataclass
 import yfinance as yf
 
 from stock_autopilot.collectors.coingecko import symbol_to_id, fetch_simple_prices
-from stock_autopilot.universe import crypto_tier_universe, global_market_universe, load_config
+from stock_autopilot.universe import (
+    crypto_tier_universe,
+    global_market_universe,
+    load_config,
+    north_america_tickers,
+)
 
 
 @dataclass
@@ -58,8 +63,12 @@ def collect_all_symbols(sources: list[str] | None = None) -> list[tuple[str, str
 
     if "regions" in sources:
         for region, syms in cfg.get("regions", {}).items():
-            for s in syms:
-                add(s, f"regions.{region}")
+            if region == "north_america":
+                for s in north_america_tickers(cfg):
+                    add(s, "regions.north_america")
+            else:
+                for s in syms:
+                    add(s, f"regions.{region}")
 
     if "india" in sources:
         for s in cfg.get("india_desk", {}).get("nse_universe") or []:

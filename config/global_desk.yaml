@@ -1,5 +1,5 @@
 # LUMIQ Global Intelligence — regional equity universes & crypto tiers (Yahoo Finance symbols)
-# Representative liquid names per region; expand over time.
+# US market tickers are merged with data/universe/nyse.txt at runtime (full NYSE scan).
 
 global_desk:
   picks_per_board: 5

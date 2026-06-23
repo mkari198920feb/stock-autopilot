@@ -43,6 +43,8 @@ Email digest fires after the autopilot cron if SMTP is configured.
 ```
 main.py                 CLI + serves the web UI
 config.yaml             watchlists, crons, brand, auth toggle
+data/universe/nyse.txt  full NYSE common-stock list (Yahoo symbols)
+scripts/                refresh_nyse_universe.py
 src/stock_autopilot/
   agent/                desk runners
   collectors/           yfinance, coingecko, amfi
@@ -58,6 +60,20 @@ Data: mostly Yahoo Finance + CoinGecko + AMFI NAV files. Free tiers — expect d
 ## Config
 
 **`config.yaml`** — universes, desk schedules, `apex.brand_name` (LUMIQ), optional RBAC if you put this behind a gateway. Keep `notifications.email.recipients` empty in git; use env vars for actual addresses.
+
+### NYSE universe
+
+The full NYSE common-stock list lives in **`data/universe/nyse.txt`** (~2,000 symbols, one per line, Yahoo format). Autopilot and the global US desk merge it at runtime — no need to paste tickers into `config.yaml`.
+
+Refresh when listings change (IPO/delisting season):
+
+```bash
+python scripts/refresh_nyse_universe.py
+```
+
+Source: [NASDAQ Trader otherlisted.txt](https://www.nasdaqtrader.com/dynamic/SymDir/otherlisted.txt) — filtered to NYSE (`Exchange=N`) common equities; ETFs, preferreds, warrants, units, and test symbols are dropped. Class shares use Yahoo dashes (`BRK-B`).
+
+Large scans use batched yfinance pulls (`agent.scan_batch_size`) and cap news fetch (`agent.max_news_symbols`). Volume filtering still happens at pick time, not when loading the universe.
 
 **`.env`** — `SMTP_*`, `EMAIL_RECIPIENTS`, optional `OPENAI_API_KEY` for slightly nicer narrative blurbs in emails. See `.env.example`.
 
